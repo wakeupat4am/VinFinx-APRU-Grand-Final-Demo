@@ -1,0 +1,14 @@
+.venv/
+.runtime/
+.demo-state*/
+__pycache__/
+*.pyc
+*.sqlite*
+*.joblib
+*.zip
+.env
+.env.*
+!.env.example
+prototype/vinfinx/local_app/assets/market.json
+prototype/vinfinx/local_app/pilot-results/
+prototype/vinfinx/local_app/test-results/

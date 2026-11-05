@@ -1,0 +1,187 @@
+/* Guided content scrolls above an independent, in-flow mascot dock. */
+.story-shell main {
+  display:flex; flex-direction:column; height:100dvh; min-height:0; overflow:hidden;
+  padding-right:0;
+  --story-gutter:clamp(12px,4vw,48px);
+}
+.ios-device .story-shell main { height:100%; }
+.ios-viewport:has(.story-shell) #shell { height:100%; }
+.story-shell header { flex:none; }
+.story-shell .demo-banner, .story-shell .workspace-bar, .story-shell footer,
+.story-launcher-hidden { display:none!important; }
+.story-shell #content {
+  flex:1; min-height:0; min-width:0; max-width:none; overflow:auto; overscroll-behavior:contain;
+  margin:0; padding:clamp(12px,3vw,32px) var(--story-gutter) 16px;
+  scrollbar-gutter:stable; animation:none;
+}
+.story-shell #content > * { max-width:56rem; margin-inline:auto; }
+.story-shell .page-head { display:none; }
+.story-shell .grid { margin-top:.75rem; }
+.story-shell :is(.card, .notice, .story-dialogue, .goal-card, .journey-progress, .health-hero, .document-card) {
+  min-width:0; overflow-wrap:anywhere;
+}
+.story-shell :is(.card,.health-hero,.journey-progress) { height:auto; }
+.story-shell .button { white-space:normal; min-width:44px; }
+.story-shell .goal-list { grid-template-columns:1fr; }
+.story-shell .goal-card { min-height:52px; padding:.65rem .8rem; }
+.story-shell .goal-card small { margin-top:.12rem; font-size:.88em; }
+.story-shell .mode-choice button { background:var(--surface); color:var(--ink); border-color:var(--line); }
+.story-shell .mode-choice button[aria-pressed=true] { background:var(--surface-soft); color:var(--ink); border-color:var(--green); }
+.story-opening-help { margin-top:.6rem; }
+.story-chapter { animation:story-arrive 220ms ease-out; }
+@keyframes story-arrive { from { opacity:.62; transform:translateY(5px); } to { opacity:1; transform:none; } }
+.story-kicker { display:flex; gap:.8rem; align-items:center; font-size:.88em; font-weight:750; color:var(--green); }
+.story-kicker progress { width:5.5rem; height:.5rem; accent-color:var(--green); }
+.story-chapter h1 { color:var(--ink); font-size:clamp(1.55rem,4vw,2.55rem); line-height:1.14; margin:.28rem 0 .65rem; letter-spacing:-.025em; }
+.story-dialogue {
+  background:var(--surface); border:1px solid var(--line); border-radius:1rem 1rem 1rem .4rem;
+  padding:.6rem .85rem; line-height:1.48; margin-bottom:.75rem;
+}
+.story-dialogue b { color:var(--green); font-size:.9em; }
+.story-dialogue p { margin:.12rem 0 0; }
+.story-edition { color:var(--muted); margin:.65rem 0; font-size:.82em; }
+.story-edition strong { color:var(--ink); }
+.story-shell .journey-progress { margin-top:.8rem; margin-bottom:0; }
+.story-shell .journey-progress-actions { margin:0; }
+.story-shell .journey-progress-actions .primary { margin-inline-start:auto; }
+.story-state { margin:.5rem 0; }
+.story-shell .form-grid > * { min-width:0; }
+.story-shell .form-grid :is(input,select) { width:100%; min-width:0; }
+.story-shell .valuation-input-only #valuationResult { display:none; }
+.story-shell #reportStage .dialog-head .icon, .story-shell #simulationStage .dialog-head .icon { display:none; }
+
+#finxTrack {
+  flex:none; background:var(--surface); border-top:1px solid var(--line);
+  padding:0 var(--story-gutter) env(safe-area-inset-bottom,0px);
+}
+.finx-dock {
+  --finx-figure-width:64px;
+  --finx-figure-height:60px;
+  --finx-dot:10px;
+  --finx-track-base:13px;
+  display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:.75rem;
+  max-width:56rem; margin:auto; min-height:82px;
+}
+.finx-path { position:relative; align-self:stretch; min-width:0; }
+.finx-ground {
+  position:absolute; bottom:calc(var(--finx-track-base) + var(--finx-dot)/2 - 1px);
+  inset-inline:calc(var(--finx-figure-width)/2); height:2px; background:var(--line);
+}
+.finx-waypoints {
+  position:absolute; bottom:var(--finx-track-base);
+  inset-inline:calc((var(--finx-figure-width) - var(--finx-dot))/2);
+  display:flex; justify-content:space-between;
+}
+.finx-waypoints i { width:var(--finx-dot); height:var(--finx-dot); border:2px solid var(--line); border-radius:50%; background:var(--surface); }
+.finx-waypoints .visited { border-color:var(--green); background:var(--surface-soft); }
+.finx-waypoints .current { border-color:var(--green); background:var(--green); }
+.finx-walker {
+  position:absolute; left:0; bottom:calc(var(--finx-track-base) + var(--finx-dot)/2);
+  width:var(--finx-figure-width); height:var(--finx-figure-height); z-index:1;
+}
+.finx-character { display:block; position:relative; width:100%; height:100%; padding:0; border:0; border-radius:.9rem; background:transparent; cursor:pointer; }
+.finx-shadow { position:absolute; left:22%; right:22%; bottom:0; height:6px; background:#12382724; border-radius:50%; }
+.finx-sprites { position:absolute; inset:0; }
+.finx-sprite { display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
+[data-motion=idle][data-pose=idle] .finx-idle,
+[data-motion=idle][data-pose=welcome] .finx-welcome,
+[data-motion=idle][data-pose=thinking] .finx-attentive,
+[data-motion=idle][data-pose=error] .finx-attentive,
+[data-motion=idle][data-pose=success] .finx-success,
+[data-motion^=walking] :is(.finx-body,.finx-left-foot,.finx-right-foot) { display:block; }
+[data-motion=walking_back] .finx-sprites { transform:scaleX(-1); }
+[data-motion^=walking] .finx-body { animation:finx-bob .24s ease-in-out infinite alternate; }
+[data-motion^=walking] .finx-left-foot,
+[data-motion^=walking] .finx-right-foot { animation:finx-step .4s ease-in-out infinite alternate; }
+[data-motion^=walking] .finx-right-foot { animation-delay:-.4s; }
+[data-motion=idle][data-pose=success] .finx-sprites { animation:finx-bob .22s ease-in-out 2 alternate; }
+@keyframes finx-step { from { transform:translate(-4px,-1px); } 50% { transform:translate(0,-4px); } to { transform:translate(4px,0); } }
+@keyframes finx-bob { from { transform:translateY(0) rotate(-2deg); } to { transform:translateY(-3px) rotate(2deg); } }
+.finx-help-link {
+  min-height:44px; min-width:44px; max-width:8.5rem; padding:.3rem .7rem;
+  font:inherit; font-size:.9em; font-weight:750; border:1px solid var(--line); border-radius:1rem;
+  background:var(--surface-soft); color:var(--ink); cursor:pointer;
+}
+
+#chatDialog[open].story-chat {
+  display:grid; grid-template-rows:auto auto auto minmax(0,1fr) auto auto; gap:.45rem;
+  inset:var(--finx-chat-top) var(--finx-chat-right) auto var(--finx-chat-left);
+  width:var(--finx-chat-width); max-width:none; height:var(--finx-chat-height); max-height:none;
+  margin:0; padding:clamp(12px,3vw,22px); border-radius:1.25rem; overflow:auto;
+  overscroll-behavior:contain; color:var(--ink);
+}
+#chatDialog.story-chat :is(.dialog-head,.chat-form,.chat-context,#finxSuggestions) { min-width:0; overflow-wrap:anywhere; }
+#chatDialog.story-chat #finxSuggestions { flex-wrap:nowrap; flex-direction:column; max-height:23dvh; overflow:auto; padding:3px; }
+#chatDialog.story-chat .messages { height:auto; max-height:none; min-height:0; overflow:auto; }
+#chatDialog.story-chat .chat-form { display:flex; gap:.4rem; margin:0; }
+#chatDialog.story-chat .chat-form input { width:100%; min-width:0; font-size:16px; }
+#chatDialog.story-chat .chat-form button { flex:none; }
+#chatDialog.story-chat .chat-context { margin:0; }
+#chatDialog.story-chat::backdrop { background:#061a1766; }
+@media(max-height:650px) {
+  .finx-dock { --finx-figure-height:50px; min-height:72px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .story-chapter,.finx-sprite,.finx-sprites { animation:none!important; }
+}
+.story-shell #content .story-opening-help summary { min-height:44px; cursor:pointer; }
+#finxRequestStatus { margin:0; overflow-wrap:anywhere; font-size:.9em; }
+#finxRequestStatus .text-button { padding-inline:.35rem; }
+.scenario-input { display:flex; flex-wrap:wrap; gap:.5rem; align-items:end; margin-block:1rem; }
+.scenario-input label { flex:1 1 13rem; min-width:0; margin:0; }
+.story-shell #toast {
+  position:static; flex:none; transform:none; width:auto; max-width:56rem; margin:0 auto .35rem;
+  padding:.4rem .75rem; box-shadow:none; text-align:center;
+}
+.story-shell main > .draft-note { display:none; }
+.story-shell .goal-card small { line-height:1.35; }
+.story-shell .story-edition:first-child { margin:0 0 .45rem; }
+@media (max-width:600px) {
+  .story-shell .goal-card { padding:.5rem .7rem; }
+  .story-shell .story-dialogue { margin-bottom:.55rem; }
+}
+#chatDialog.story-chat.compact-chat {
+  grid-template-rows:auto minmax(0,1fr) auto auto;
+}
+#chatDialog.story-chat.compact-chat :is(.chat-context,#finxSuggestions,.assistant-note) { display:none; }
+/* Match the story and dock gutters to the inner phone, even on desktop. */
+.ios-device .story-shell main { --story-gutter:16px; }
+.ios-device .story-shell #content {
+  padding:12px var(--story-gutter) 14px;
+  scrollbar-gutter:auto; scroll-padding-block-end:.75rem;
+}
+.ios-device .story-chapter h1 { font-size:calc(24px * var(--type-scale)); margin-bottom:.4rem; }
+.ios-device .story-dialogue { padding:.35rem .65rem; margin-bottom:.55rem; }
+.ios-device .story-dialogue b { margin-inline-end:.4rem; }
+.ios-device .story-dialogue p { display:inline; margin:0; }
+.ios-device .story-shell .goal-list { gap:.4rem; }
+.ios-device .story-shell .goal-card { padding:.4rem .55rem; gap:.5rem; }
+.ios-device .finx-dock {
+  --finx-figure-width:56px;
+  --finx-figure-height:52px;
+  --finx-track-base:9px;
+  min-height:70px;
+}
+.ios-device .finx-help-link { font-size:calc(.9rem * var(--type-scale)); }
+/* A short action cue, supporting sentence, then optional detail. Use weight and
+   structure as well as colour; keep warnings and evidence badges visible. */
+.story-shell .story-dialogue {
+  border-inline-start:4px solid var(--green);
+  padding:.6rem .8rem;
+}
+.story-guide-label { display:block; color:var(--muted); font-size:.8em; margin-bottom:.25rem; }
+.story-shell .story-dialogue p { display:block; margin:0; }
+.story-shell .story-dialogue strong { color:var(--ink); font-size:1.12em; font-weight:800; line-height:1.35; }
+.story-shell .story-dialogue .story-support { margin-top:.25rem; line-height:1.45; }
+.health-takeaway { display:grid; gap:.2rem; margin-block:1rem; }
+.health-takeaway > span { font-weight:700; }
+.health-takeaway > strong { font-size:1.65em; line-height:1.2; }
+.health-takeaway > small { font-size:.9em; }
+.story-shell .demo-details > summary { min-height:44px; padding-block:.65rem; font-weight:750; }
+.story-shell .goal-card strong { font-size:1.08em; line-height:1.3; }
+@media (min-width:361px) and (max-height:780px) {
+  .ios-stage:has(.story-shell) .ios-preview-toolbar { padding-block:10px; }
+  .ios-stage:has(.story-shell) .ios-caption { padding-block:6px; }
+  .ios-stage:has(.story-shell) .ios-device header { height:50px; }
+  .ios-stage:has(.story-shell) .ios-tabbar { min-height:53px; padding-block:2px; }
+}
