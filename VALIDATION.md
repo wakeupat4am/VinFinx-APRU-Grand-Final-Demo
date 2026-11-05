@@ -16,6 +16,9 @@
   detail-aware input/save, unchanged saved profile after comparison previews,
   phone/dark/larger-text layout, and policy-hash report provenance. The full
   eight-step/three-role QA still passed on both engines.
+- Fresh source-only installation in a new folder (no copied environment, database
+  or accounts), using the two hash-checked ZIPs and pinned dependencies, passed the
+  complete Chromium QA again, including four actual detail-aware inference calls.
 - Detailed measurements and limitations: [DETAIL_INTERVAL_RESULTS.md](docs/DETAIL_INTERVAL_RESULTS.md).
 
 ## English recording release (v1.1)
