@@ -14,9 +14,10 @@ APP = ROOT/'prototype/vinfinx/local_app'
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', choices=['init','serve','accounts','prepare','test'])
+    parser.add_argument('command', choices=['init','serve','accounts','prepare','test','qa'])
     parser.add_argument('--state',type=Path,default=ROOT/'.demo-state')
     parser.add_argument('--port',type=int,default=4176)
+    parser.add_argument('--browsers',default='chromium,webkit',help='Comma-separated QA browser engines')
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:
         parser.error('Port must be between 1024 and 65535.')
@@ -48,7 +49,10 @@ def main():
         path=APP/'assets/market.json' if name=='market.json' else ROOT/'.runtime'/name
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=digest:
             raise SystemExit('Missing or modified trusted asset: '+name+'. Run setup_demo.py.')
-    if args.command == 'serve':
+    if args.command == 'qa':
+        from scripts.qa import run
+        run(args.browsers.split(','))
+    elif args.command == 'serve':
         if not (state/'vinfinx.sqlite').is_file():
             raise SystemExit('Run demo.py init first.')
         print(f'Web: http://127.0.0.1:{args.port}/\niPhone: http://127.0.0.1:{args.port}/?demo=ios',flush=True)

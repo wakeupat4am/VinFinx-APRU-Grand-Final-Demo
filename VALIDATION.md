@@ -1,52 +1,76 @@
 # Release validation — 6 November 2026
 
-This repository was copied into a separate directory, given a fresh Python 3.12
-virtual environment, installed from requirements and provisioned with a new
-synthetic database. No owner database or passwords were copied.
+## English recording release (v1.1)
 
-## Completed checks
+The shared app remains an actual local application, not a clickable screenshot.
+The release translates the root documentation and remaining scenario error, uses
+English administrative labels while retaining canonical Vietnamese location keys,
+and bundles the licensed Nunito font so system font availability cannot change
+text metrics. Existing financial engines and artifact hashes are unchanged.
 
-- Fresh setup with the exact asset ZIP: checksum validation, dependency installation,
-  `pip check`, 10 unique generated accounts and six personal PDF/PNG samples.
-- Standalone Waitress service at loopback 4187; `demo.py prepare` saved an actual
-  Customer 01 LightGBM valuation and extracted the matching PDF into pending review.
-- **22 JavaScript checks passed**: existing iPhone shell, guided navigation,
-  account-scoped progress, theme, drafts, navigation races, loan arithmetic.
-- **7 backend suites passed**: readiness and origin checks; real model parity and
-  idempotency; 10 concurrent users; upload deduplication, mismatched employee rejection,
-  matching-sample human approval and review race; verified backup/restore; geographic
-  hierarchy validation; Qwen outage fallback and report consent/snapshot checks.
-- Concurrency run: **182 requests, 64 real CPU AVM inferences, 16 expected access
-  denials, zero unexpected failures**. Inference HTTP p50 958.02 ms, p95 970.96 ms;
-  run duration 7.75 s. These are local measurements, not a guarantee on another PC.
-- Packaging scan: source excludes model files, generated market catalog, state DB,
-  uploads, password files and private keys. AVM artifacts/catalog are hash-checked
-  assets of the private GitHub release. Qwen weights are not included.
+The release adds pinned Playwright tooling, a three-context real-login launcher
+and a portable QA runner that provisions isolated synthetic state and stops its
+own loopback server. The Python dependency file now pins the validated transitive
+runtime dependencies as well as the direct packages.
 
-The model version is `phase1-baseline-20261015` with inference adapter
-`avm-inference/2.1`. Frozen model/transform/calibration digests are in
-`assets.lock.json`. No financial model, scoring formula or OCR approval policy was
-changed for packaging.
+### Completed checks
 
-## Portability fixes versus the working source tree
+- **22 JavaScript checks passed:** state/navigation, theme, draft isolation,
+  iPhone shell bounds and deterministic scenario arithmetic.
+- **7 backend suites passed:** readiness/origin checks, actual model parity and
+  idempotency, role isolation, 10 concurrent users, geographic hierarchy, upload
+  deduplication, employee mismatch rejection, approval races, backup/restore,
+  Qwen outage fallback and report consent/snapshot checks.
+- Concurrency: **182 requests, 64 actual CPU inferences, 16 expected access denials,
+  zero unexpected failures**. Inference HTTP p50 929.41 ms, p95 947.62 ms; test
+  duration 7.53 seconds on this Mac. This is not a performance guarantee elsewhere.
+- Chromium **156.0.8078.4** (Playwright build 1248) and WebKit **27.2** (build 2370),
+  with Playwright **1.64.1**, completed the real eight-step customer walkthrough:
+  preview/save valuation, pending PDF evidence, score, deterministic scenario,
+  Ask Finx fallback and consented HTML download.
+- Both browser engines passed 10 viewport sizes from **320×568 to 1440×900**, six
+  phone-fit conditions including landscape and a short viewport, dark/larger text,
+  reduced motion, draft/resume, invalid inputs, delayed and failed model requests,
+  keyboard-height simulation, chat controls and role layouts.
+- The bundled font loaded in both engines. Representative report/mobile and
+  desktop advisor screenshots were visually inspected.
+- Both engines verified identical opening labels and card dimensions for all six
+  Customers, while preserving separate profiles. The real cross-role handoff
+  passed: pending evidence → human approval → updated Customer/Advisor score and
+  report provenance; Advisor approval was correctly denied.
+- The launcher signed in all three roles independently and retained the correct
+  identity after reloading each window.
 
-The recording repository adds `setup_demo.py` and `demo.py` to remove workstation
-path/setup dependencies. The existing negative OCR test now generates its own
-mismatched synthetic payslip instead of relying on a PDF outside the repository.
-The omitted macro-research integration is a clearly labelled static unavailable
-page under `/research/`; it does not simulate a live pipeline.
+Generated screenshots, video and measurements are available after running
+`demo.py qa` under ignored `qa-results/`. Repeat the tests on the recording machine.
+This is assertion-based layout/flow QA, not cross-OS pixel-perfect certification.
 
-## Limits
+### Unchanged model contract
 
-- Fresh environment validation was on macOS ARM with Python 3.12. Linux and Windows
-  installation commands need validation on the recipient's machine.
-- The current HTML/CSS/JS originated from the locally browser-checked iPhone frame
-  and readability fixes. This packaging run did not repeat a full physical-device
-  browser matrix or an older-adult usability study.
-- PDF text extraction and approval were tested. Image OCR needs an installed local
-  engine; PNG was generated but new-machine Tesseract accuracy is not claimed.
-- Qwen GPU generation was **not** tested in this release run. Outage fallback was.
-- No bank integration, live macro decisions, native iOS application, production
-  deployment or official credit approval is included.
+The model version remains `phase1-baseline-20261015` with inference adapter
+`avm-inference/2.1`. Model/transform/calibration digests are in `assets.lock.json`.
+The source release intentionally reuses the exact original **demo-v1** asset ZIP.
+No financial formula, benchmark result or OCR verification policy changed.
 
-Repeat the README commands and manual three-role checklist before recording.
+### Known limits
+
+- Validation host: macOS ARM, Python 3.12.14, Node.js 24.7.0. Linux/Windows install
+  instructions are supplied, but those OS installations have not been certified.
+- Browser automation uses Playwright WebKit, not a physical iPhone with Safari.
+  Keyboard handling is simulated; device, VoiceOver and older-adult testing remain.
+- Local font metrics are consistent, but native controls, emoji, rasterization and
+  browser PDF-print pagination can differ across platforms.
+- PDF extraction and human approval use synthetic samples. Image OCR needs the
+  installed local engine; no new-machine Tesseract accuracy claim is made.
+- Qwen GPU generation was not measured in this release. The deterministic outage
+  fallback is tested and labelled. Qwen requires a separately authorized service.
+- No bank APIs, live macro decisions, live agent listings, native iOS application,
+  official credit approval or public application hosting is included.
+
+## Initial standalone release (v1)
+
+The original release was installed into a fresh Python 3.12 environment, downloaded
+its hash-checked model ZIP from GitHub, and provisioned ten unique accounts and six
+PDF/PNG samples. Seven backend suites and 22 JavaScript checks passed. This v1.1
+release adds repeatable browser QA and recording setup instead of relying solely
+on the original workstation's earlier manual UI checks.

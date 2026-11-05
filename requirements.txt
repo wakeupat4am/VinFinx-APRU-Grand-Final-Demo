@@ -14,3 +14,16 @@ pypdfium2==5.14.0
 pillow==13.0.0
 waitress==3.0.2
 pytesseract==0.3.13
+
+# Transitive dependencies locked from the validated Python 3.12 recording environment.
+cffi==2.1.1
+charset-normalizer==3.5.2
+cloudpickle==3.1.2
+cryptography==50.0.2
+narwhals==2.28.0
+packaging==26.3
+pdfminer.six==20251230
+pycparser==3.12
+python-dateutil==4.0.0
+pytz==2026.6
+tzdata==2026.6

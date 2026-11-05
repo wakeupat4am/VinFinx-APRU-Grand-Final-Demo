@@ -99,7 +99,7 @@ test('Rapid navigation ignores an older page response', async()=>{
 test('Display labels retain acronyms and Vietnamese place capitalization',()=>{
   const f=fixture();f.context.fetch=()=>new Promise(()=>{});
   vm.runInContext(source('app.js'),f.context);
-  assert.equal(vm.runInContext("place('phường quang trung, quận đống đa')",f.context),'Phường Quang Trung, Quận Đống Đa');
+  assert.equal(vm.runInContext("place('phường quang trung, quận đống đa')",f.context),'Ward Quang Trung, District Đống Đa');
   assert.equal(vm.runInContext("factorLabel('log road')",f.context),'Road width (log scale)');
   assert.equal(vm.runInContext("sentence('OCR checks')",f.context),'OCR checks');
 });

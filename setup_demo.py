@@ -16,6 +16,7 @@ REPO = 'wakeupat4am/VinFinx-APRU-Grand-Final-Demo'
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--assets', type=Path, help='Owner-supplied asset ZIP; otherwise download the private release with gh')
+    parser.add_argument('--with-browser',action='store_true',help='Install the locked recording/QA browser tools (requires Node.js and npm)')
     args = parser.parse_args()
     if sys.version_info[:2] != (3, 12):
         raise SystemExit('Use Python 3.12 for the serialized model and pinned dependencies: python3.12 setup_demo.py')
@@ -51,6 +52,12 @@ def main():
     subprocess.run([str(python),'-m','pip','install','-r',str(ROOT/'requirements.txt')],check=True)
     subprocess.run([str(python),'-m','pip','check'],check=True)
     subprocess.run([str(python),str(ROOT/'demo.py'),'init'],check=True)
+    if args.with_browser:
+        npm=shutil.which('npm.cmd' if os.name=='nt' else 'npm')
+        if not npm:
+            raise SystemExit('App setup succeeded. Install Node.js 24, then run npm ci and npm run browsers from this folder.')
+        subprocess.run([npm,'ci','--ignore-scripts'],cwd=ROOT,check=True)
+        subprocess.run([npm,'run','browsers'],cwd=ROOT,check=True)
     print('\nReady. Run: '+str(python)+' demo.py serve')
 
 if __name__ == '__main__':

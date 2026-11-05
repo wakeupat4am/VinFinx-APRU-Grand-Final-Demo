@@ -3,7 +3,7 @@
 function repaymentScenario(principal, annualRate, term, income, existingPayment) {
   if (![principal, annualRate, term, income, existingPayment].every(Number.isFinite)
       || principal < 0 || annualRate < 0 || term < 1 || !Number.isInteger(term)) {
-    throw new RangeError('Giả định mô phỏng không hợp lệ.');
+    throw new RangeError('Enter valid loan scenario assumptions.');
   }
   const rate=annualRate/12;
   const payment=rate?principal*rate/-Math.expm1(-term*Math.log1p(rate)):principal/term;

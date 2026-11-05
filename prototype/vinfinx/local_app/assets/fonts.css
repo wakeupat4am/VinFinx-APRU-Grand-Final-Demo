@@ -1,0 +1,12 @@
+/* Bundled OFL font: typography must not depend on installed OS fonts or a CDN. */
+@font-face {
+  font-family: 'VinFinx Nunito';
+  src: url('/assets/fonts/Nunito.ttf') format('truetype');
+  font-weight: 200 1000;
+  font-style: normal;
+  font-display: block;
+}
+:root { --app-font: 'VinFinx Nunito', sans-serif; }
+body { font-family: var(--app-font); }
+html.ios-preview { --ios-font: var(--app-font); --ios-display: var(--app-font); }
+.login-copy em { font-family: var(--app-font); }

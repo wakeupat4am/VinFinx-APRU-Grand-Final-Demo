@@ -1,167 +1,235 @@
-# VinFinx — APRU Grand Final Demo
+# VinFinx × Vietcombank — APRU Grand Final Demo
 
-**VinFinx × Vietcombank / MyWealth** — bản demo độc lập để một thành viên trong nhóm clone về, chạy trên máy mình và quay ba vai trò. Giao diện ứng dụng bằng **tiếng Anh**, gồm web và bản xem trước iPhone, mascot Finx, chế độ sáng/tối, chữ lớn, hướng dẫn tám bước và phần giải thích có thể mở rộng.
+**An English, three-role demo you can clone, rehearse and record on your own computer.**
 
-> Đây là prototype nghiên cứu dùng hồ sơ giả lập. Định giá dùng **LightGBM thật chạy CPU**; giá là ước tính từ giá chào bán lịch sử. Điểm tài chính là bộ quy tắc demo. Kết quả không phải thẩm định chính thức, điểm tín dụng ngân hàng hay phê duyệt khoản vay.
+MyWealth helps a customer explore an indicative property value, understand their financial health and prepare for a conversation with an advisor. Finx guides the customer through eight small steps. The same application supports a normal web layout and an interactive iPhone-style preview.
 
-## 1. Bắt đầu nhanh — macOS / Linux
+This release prioritizes **reproducing the experience first**: bundled typography and mascot assets, one shared customer interface, fresh synthetic accounts, independent role windows, pinned browser tools and an automated mobile walkthrough. The existing AVM, financial scoring rules and human approval gate are retained.
 
-Bạn cần quyền truy cập **repo private này**, Python **3.12**, Git và GitHub CLI (`gh`). Không cần VPN hay GPU để chạy định giá, tài chính, PDF mẫu, báo cáo và Ask Finx ở Evidence mode.
+> **Research demo, synthetic profiles.** Property inference uses actual CPU LightGBM artifacts trained on historical asking prices. The financial-health score is an illustrative rule-based score. Neither is a formal appraisal, official credit score, verified lending offer or bank approval. There is no live banking integration.
 
-Trên macOS nếu chưa có các công cụ, cài bằng Homebrew:
+## 1. Recommended setup for recording
+
+### Requirements
+
+- **Python 3.12** with `venv`. Do not substitute a different Python version for the serialized model.
+- **Git and GitHub CLI (`gh`)**, authenticated to an account that can access the repository and its model Release.
+- **Node.js 24** and npm for the one-command role launcher and browser QA. `.nvmrc` records the tested Node version. The Python web app itself does not need Node.
+- macOS: `libomp` for LightGBM. Linux: `libgomp1` and the OS packages required by Playwright.
+- Optional local image OCR: Tesseract, or Apple Vision on macOS. The supplied **text PDF** demonstration works without an image OCR engine.
+
+On macOS with Homebrew:
 
 ```bash
-brew install python@3.12 gh libomp tesseract
+brew install python@3.12 gh node@24 libomp tesseract
 ```
 
-Trên Ubuntu, cài Git/GitHub CLI, Python 3.12 với module `venv`, `libgomp1` và `tesseract-ocr` theo kho phần mềm của hệ điều hành. Đừng thay Python hệ thống. Máy khác macOS đã được thiết kế để dùng Tesseract nhưng cần chạy kiểm tra bên dưới trên chính máy quay.
+Use your installation's instructions to put Python and Node on `PATH`. Confirm `python3.12 --version`, `node --version` and `npm --version` before proceeding. On Ubuntu, install Python 3.12 with `venv`, Git, GitHub CLI, Node.js and `libgomp1` from your supported package sources; do not replace the system Python.
+
+### Clone and install
 
 ```bash
 gh auth login
 gh repo clone wakeupat4am/VinFinx-APRU-Grand-Final-Demo
 cd VinFinx-APRU-Grand-Final-Demo
-python3.12 setup_demo.py
-.venv/bin/python demo.py accounts
+python3.12 setup_demo.py --with-browser
+```
+
+The installer:
+
+1. Downloads `vinfinx-demo-assets-v1.zip` from the immutable **demo-v1** Release named in `assets.lock.json`.
+2. Verifies the ZIP and every allowed member against SHA-256 hashes before loading anything.
+3. Creates `.venv`, installs the pinned Python dependencies, and runs `pip check`.
+4. Creates **10 new synthetic accounts** and six individual, watermarked PDF/PNG payslips.
+5. With `--with-browser`, installs npm dependencies from `package-lock.json` and the matching Chromium/WebKit builds.
+
+No developer database, old passwords, raw property datasets or private server credentials are needed. Internet is needed for installation. Once installed, the core experience runs locally; map tiles and optional Qwen have separate dependencies.
+
+**Repeatable release:** use the `demo-v1.1.0` tag to reproduce this source version. The tag's model lock intentionally still references `demo-v1`: the model artifacts have not changed. Use `main` for subsequent updates.
+
+If you received the exact asset ZIP separately:
+
+```bash
+python3.12 setup_demo.py --assets /absolute/path/vinfinx-demo-assets-v1.zip --with-browser
+```
+
+The supplied ZIP must match `assets.lock.json`. Do not bypass checksum checks. Only load the trusted project transformer: pickle/joblib files can execute code.
+
+### Start the application
+
+In terminal 1:
+
+```bash
 .venv/bin/python demo.py serve
 ```
 
-`setup_demo.py` làm bốn việc:
+Wait for `pilot listening`. Keep this terminal open.
 
-1. Tải `vinfinx-demo-assets-v1.zip` từ GitHub Release **demo-v1** của repo private này.
-2. Kiểm tra SHA-256 của ZIP và từng file bằng `assets.lock.json` trước khi sử dụng model.
-3. Tạo `.venv`, cài dependencies, chạy `pip check`.
-4. Tạo cơ sở dữ liệu, 10 tài khoản và sáu bản lương PDF/PNG **mới, giả lập**. Không sao chép tài khoản hay hồ sơ của người phát triển.
-
-Giữ terminal chạy server mở. Khi thấy thông báo `pilot listening`, mở:
-
-| Giao diện | Địa chỉ mặc định |
+| Interface | Local address |
 | --- | --- |
-| Web | http://127.0.0.1:4176/ |
-| iPhone preview | http://127.0.0.1:4176/?demo=ios |
+| Web app | http://127.0.0.1:4176/ |
+| iPhone-style preview | http://127.0.0.1:4176/?demo=ios |
 
-Đây là web chạy trong trình duyệt, **không phải app iOS native**. Trên desktop có khung iPhone; trên màn hình điện thoại nhỏ, ứng dụng dùng toàn bộ viewport. Link `127.0.0.1` trỏ về máy đang chạy server, không phải một tên miền công khai.
+`127.0.0.1` means the computer running the server. It is not a public domain or a link someone can open on a different computer. The service binds only to loopback. The iPhone view is an interactive **web preview**, not a native iOS app or Xcode simulator.
 
-Nếu chủ repo đưa ZIP qua kênh riêng thay vì tải bằng `gh`:
-
-```bash
-python3.12 setup_demo.py --assets /absolute/path/vinfinx-demo-assets-v1.zip
-```
-
-ZIP phải đúng phiên bản trong `assets.lock.json`. Không tải model pickle/joblib từ nguồn lạ; đây là định dạng có khả năng thực thi mã. Source code và assets phải cùng phiên bản phát hành.
-
-### Windows
-
-Có thể thử với Python 3.12 và GitHub CLI, dùng các lệnh tương ứng:
-
-```powershell
-py -3.12 setup_demo.py
-.venv\Scripts\python.exe demo.py accounts
-.venv\Scripts\python.exe demo.py serve
-```
-
-Windows chưa được kiểm thử trong lần đóng gói này. PDF text extraction không cần OCR hệ điều hành. Với PNG, cài Tesseract và đặt `VINFINX_TESSERACT` trỏ đến `tesseract.exe`; có thể cần Microsoft Visual C++ runtime cho LightGBM. macOS là môi trường đã kiểm thử của gói này.
-
-## 2. Tài khoản và tên ba vai trò
-
-Chạy `.venv/bin/python demo.py accounts` để xem mật khẩu được tạo **riêng trên máy bạn**. Mật khẩu cũ trong chat của chủ dự án không dùng cho bản clone mới.
-
-| Vai trò thực tế | Tài khoản gợi ý khi quay | Chức năng |
-| --- | --- | --- |
-| Customer | `customer01@vinfinx.demo` | Định giá, tài chính, giấy tờ, hỏi Finx, mô phỏng vay, xem/xuất báo cáo |
-| Advisor | `advisor01@vinfinx.demo` | Xem Customer 01–03 được phân công, giải thích hồ sơ, tư vấn |
-| Authenticator / Verifier | `authenticator01@vinfinx.demo` | Kiểm tra giấy tờ/định giá, chấp thuận hoặc từ chối, xem audit log |
-
-**“Auditor” trong trao đổi của nhóm tương ứng chức năng kiểm tra/audit của Authenticator/Verifier.** Ứng dụng không có một role `auditor` riêng. Nếu đang nói đến nhân viên tư vấn, tên role là **Advisor**. Không đổi nhãn bằng cách bỏ kiểm soát quyền.
-
-Đầy đủ có 6 Customer, 2 Advisor, 2 Authenticator. Advisor 02 chỉ được phân công Customer 04–06. Tất cả Customer dùng chung giao diện; dữ liệu, tiến trình hướng dẫn và lựa chọn hiển thị vẫn riêng. Danh sách mật khẩu ở `.demo-state/pilot_accounts.json`, đã được gitignore. Không đưa file này vào video, Git hoặc tin nhắn công khai.
-
-## 3. Chuẩn bị trước khi quay
-
-Trong terminal thứ hai, tại thư mục repo, khi server đang chạy:
+In terminal 2, from the same repository:
 
 ```bash
 .venv/bin/python demo.py prepare
+npm run record
 ```
 
-Lệnh này đăng nhập Customer 01 qua API thông thường, chạy định giá thật cho thông tin nhà mẫu và trích xuất PDF lương mẫu rồi gửi chờ duyệt. Lệnh **không phê duyệt** thu nhập. Nếu đã có định giá hoặc tài liệu, nó giữ nguyên. Customer 01 sẽ có dữ liệu để trình diễn; Advisor 01 thấy cùng hồ sơ; Authenticator thấy hàng chờ. Giao diện có thể vẫn yêu cầu bấm `Get price range` để hoàn thành bước nhập nhà trong một walkthrough mới.
+`prepare` uses normal authenticated APIs to save one actual Customer 01 valuation and submit their synthetic PDF for review. It does **not approve income**, overwrite an existing valuation or discard existing documents. Skip it if you want to demonstrate the complete empty-state entry flow instead.
 
-Mở màn hình **Check services**: AVM phải `Ready`, database sẵn sàng. Qwen có thể `Offline · Evidence mode`; đây là fallback thật từ dữ liệu đã lưu, không phải câu trả lời LLM giả.
+`npm run record` opens **three independent Chromium windows**, logs each in through the real sign-in form, then reloads all three to verify session isolation:
 
-### Ba role mở cùng lúc, không mất thời gian đăng nhập lại
+1. Customer 01 — iPhone preview.
+2. Advisor 01 — web workspace.
+3. Authenticator 01 — web review queue.
 
-**Safari trên Mac — cách đã kiểm tra:**
+Switch windows while recording; no logout/login is required. Each launch uses fresh browser storage with English locale, Light appearance and the same desktop viewport. Customer starts in Guided mode at step 1 with default text size. Database records persist. Keep the launcher terminal open; `Ctrl+C` closes its windows. Passwords are not printed by the launcher.
 
-1. Mở một cửa sổ Private Browsing mới bằng `⌘⇧N`.
-2. Tab 1: mở iPhone URL và đăng nhập Customer 01.
-3. Dùng `⌘T` tạo tab mới (không Duplicate Tab), mở web URL và đăng nhập Advisor 01.
-4. Tạo tab thứ ba tương tự, đăng nhập Authenticator 01.
-5. Tải lại từng tab một lần để chắc chắn vẫn đúng role. Chuyển bằng **⌘1 / ⌘2 / ⌘3**.
-6. Giữ nguyên cửa sổ trong lúc quay; không đóng các tab private.
+## 2. Accounts and role boundaries
 
-**Chrome/Edge:** dùng ba browser profile tách biệt hoặc ba trình duyệt khác nhau. Ba tab thường cùng origin chia sẻ cookie; nhiều cửa sổ Incognito cùng một phiên cũng có thể chia sẻ đăng nhập. Đổi cổng đơn thuần không tách cookie. Không dùng cách bỏ đăng nhập để quay.
-
-Phiên đăng nhập hiện có thời hạn 8 giờ. Chuẩn bị lại trước buổi quay nếu đã để qua đêm. Đăng nhập trên web và iPhone URL trong cùng một browser profile dùng chung tài khoản — hai giao diện cùng backend.
-
-## 4. Kịch bản quay 2 phút
-
-Đây là gợi ý thời lượng, không phải số đo hoàn thành tác vụ thực nghiệm.
-
-| Mốc | Role | Thao tác và nội dung cần nhấn mạnh |
-| --- | --- | --- |
-| 00:00–00:10 | Customer | Mở `Your goal today`, chọn tìm hiểu giá nhà. Finx dẫn từng bước, có chữ in đậm và nút lớn. |
-| 00:10–00:30 | Customer | Xem/sửa thông tin mẫu, `Get price range`, Next. Chỉ ra khoảng giá và mở yếu tố ảnh hưởng. Đây là giá chào bán ước tính. |
-| 00:30–00:45 | Customer | Đến giấy tờ. Cho thấy bản lương mẫu và trạng thái chờ người duyệt. PDF trích xuất text; PNG mới là image OCR. |
-| 00:45–01:00 | Customer | Xem điểm, `Left each month`, mở score breakdown; chuyển đến mô phỏng trả nợ với giả định. |
-| 01:00–01:20 | Customer | Hỏi một câu gợi ý trong Ask Finx; mở bước báo cáo. Chỉ xuất sau khi đọc và đồng ý. |
-| 01:20–01:40 | Advisor | `⌘2`: chọn Customer 01, chỉ ra hồ sơ được phân công, score breakdown và lựa chọn tư vấn. |
-| 01:40–02:00 | Authenticator | `⌘3`: mở số liệu và nguồn trên bản lương; minh họa bước con người xác minh, sau đó audit log nếu đủ thời gian. |
-
-Nếu bấm `Verify sample income`, dữ liệu demo thật sự thay đổi: thu nhập lấy từ bản lương mẫu, điểm tính lại theo quy tắc. Sau đó refresh các tab khác để xem thay đổi. **Đừng duyệt trước khi quay** nếu muốn quay trạng thái pending. Việc điểm tăng sau xác minh chỉ là thay đổi bằng chứng/đầu vào, không chứng minh tài chính thực tế của khách hàng đã cải thiện.
-
-Để quay lại từ hồ sơ sạch, dùng một thư mục trạng thái **mới**, không xóa trạng thái đang dùng:
+For manual sign-in, print your installation's credentials:
 
 ```bash
-# Dừng server hiện tại bằng Ctrl+C trước.
-.venv/bin/python demo.py init --state .demo-state-take2
-.venv/bin/python demo.py accounts --state .demo-state-take2
-.venv/bin/python demo.py serve --state .demo-state-take2
-# Terminal thứ hai:
-.venv/bin/python demo.py prepare --state .demo-state-take2
+.venv/bin/python demo.py accounts
 ```
 
-Dùng cửa sổ private mới và mật khẩu của take2. Tiến trình guided lưu trong browser theo tài khoản; bộ dữ liệu mới không tự xóa tiến trình browser cũ. Chọn cùng `--state` và `--port` trong mọi lệnh của một lần quay.
+| Role | Suggested account | Authorized functions |
+| --- | --- | --- |
+| Customer | `customer01@vinfinx.demo` | Own valuation, finances, documents, Ask Finx, loan scenarios and consented report export |
+| Advisor | `advisor01@vinfinx.demo` | Assigned Customer 01–03, profile explanations, consultation and read-only document review |
+| Authenticator / Verifier | `authenticator01@vinfinx.demo` | Evidence and valuation review, approve/reject actions and audit log |
 
-## 5. Những gì hoạt động, mô phỏng và chưa triển khai
+There are **6 Customers, 2 Advisors and 2 Authenticators**. Advisor 02 is assigned Customer 04–06. The team's term **Auditor** refers to the audit/review function of Authenticator; it is not a fourth role. Advisor is the consultation role. UI text sometimes calls Authenticator **Verifier** for clarity.
 
-| Tính năng | Trạng thái và giới hạn |
+All six Customers use the same HTML, CSS, components and journey logic. Their financial values, uploaded documents, verification status and progress remain separate. Identical UI does not mean shared customer data or identical scores.
+
+Passwords are randomly generated in `.demo-state/pilot_accounts.json`, which is ignored by Git. Do not record this file or the output of `accounts`. Passwords from another clone or an old chat will not work. Sessions expire after eight hours.
+
+### Manual browser use
+
+Use three separate browser profiles or different browsers. Ordinary tabs on the same origin share cookies; different localhost ports do not isolate those cookies. Do not rely on multiple Incognito windows sharing one profile. The included launcher is the tested way to open three independent sessions without changing access control.
+
+Without browser tooling, omit `--with-browser`, start the Python server and sign in manually. You still get the same app assets, UI and backend.
+
+## 3. Customer walkthrough and navigation
+
+| Step | Customer action | Expected result |
+| --- | --- | --- |
+| 1. Goal | Choose property, financial health or borrowing | A short explanation and one clear next action |
+| 2. Property | Select district → ward → street; enter area and other known details | Dependent locations stay within the selected parent; unknown details may be omitted |
+| 3. Valuation | Get a range, expand explanations; save when appropriate | Model estimate, interval, drivers, provenance and limitations |
+| 4. Income evidence | Use the synthetic text PDF or upload an allowed sample | Extraction is labelled pending; income is not automatically verified |
+| 5. Financial health | Review score, monthly surplus and components | Current rule-based score using stored evidence and its verification state |
+| 6. Loan scenario | Enter a hypothetical amount and inspect rate sensitivity | Deterministic payments and assumptions, not an offer or approval |
+| 7. Ask Finx | Ask a suggested or typed question | Context-aware explanation from authorized evidence, with the actual assistance mode |
+| 8. Advisor and report | Preview the report, review the contents, explicitly consent to export | Downloadable HTML with the recorded evidence and provenance |
+
+Property-goal users must obtain a successful estimate before advancing from property input. Other goals can skip that step. A preview is not a saved customer record: use the save action when the estimate must appear in the advisor workspace, Ask Finx or the report.
+
+Back, permitted Skip, Pause, resume and direct navigation remain available. **Guided, Standard and Explore** share the same features and backend. Changing a property input invalidates its completed-input state until recalculated. Guided progress is stored per customer in that browser; profile data is stored in SQLite. Browser drafts are not durable backups.
+
+Explanations have three levels: the immediate plain-language takeaway, expandable numeric/practical detail, and assumptions/model/source information. Finx, large controls, bold key phrases, Larger text, light/dark/system appearance and reduced-motion behavior are preserved.
+
+## 4. Repeat the same recording start
+
+The launcher starts with empty cookies and browser storage on every invocation, so old journey progress and theme choices cannot change the opening shot. It does **not reset database records**.
+
+For a fully fresh recording take, stop your current server, choose a new state directory and use it consistently:
+
+```bash
+.venv/bin/python demo.py init --state .demo-state-take2
+.venv/bin/python demo.py serve --state .demo-state-take2
+# In another terminal:
+.venv/bin/python demo.py prepare --state .demo-state-take2
+npm run record -- --state .demo-state-take2
+```
+
+Existing state is never silently reset. Setup preserves existing accounts. `init` refuses incomplete state instead of overwriting it. Reusing a take after approval correctly shows **Verified**, not Pending. Choose a new take to record Pending again.
+
+The synthetic financial inputs and matching property fixture are consistent across fresh installations. Passwords, document IDs, audit timestamps, report timestamps and current payslip month intentionally differ. Native browser controls, emoji and text rasterization can vary by OS. We do not promise byte-identical screenshots across different operating systems.
+
+For exact comparison, use the same source tag, locked dependencies, browser build, viewport, locale, timezone and fresh state. See [reproducibility contract](docs/REPRODUCIBILITY.md).
+
+## 5. Suggested two-minute recording
+
+| Time | Role | Show |
+| --- | --- | --- |
+| 00:00–00:10 | Customer | Three goals, simple instructions and Finx as a persistent guide |
+| 00:10–00:30 | Customer | Property details and indicative asking-price range; expand one explanation |
+| 00:30–00:45 | Customer | Synthetic payslip extraction and **Pending review** |
+| 00:45–01:00 | Customer | Financial score breakdown, monthly surplus and a hypothetical repayment |
+| 01:00–01:20 | Customer | Ask Finx, then preview the report; export only after consent |
+| 01:20–01:40 | Advisor | Switch window; open the assigned profile and show the same evidence |
+| 01:40–02:00 | Authenticator | Switch window; inspect the payslip, verify it and show the audit trail |
+
+Rehearse before recording. `prepare` supplies saved evidence but does not mark the browser's property-input task complete: calculate once if that step asks you to. Avoid scrolling through every technical detail in the two-minute recording.
+
+`Verify sample income` really changes the synthetic profile. Refresh the other windows to see the update. A score change caused by new evidence is not proof that the person's actual financial health improved.
+
+Export is HTML. Open the downloaded report and use the browser's **Print → Save as PDF** if you need PDF. Print layout depends on the browser's print settings.
+
+## 6. Verify UI/UX before model benchmarking
+
+After `setup_demo.py --with-browser`:
+
+```bash
+npm test
+.venv/bin/python demo.py qa
+.venv/bin/python demo.py test
+```
+
+- `npm test`: fast UI state/navigation, themes, draft isolation and loan-calculation checks.
+- `demo.py qa`: launches temporary loopback servers with **fresh synthetic state per browser**, exercises Chromium and WebKit, saves screenshots/measurements, then stops those servers. It never uses `.demo-state`.
+- `demo.py test`: isolated backend/model tests for permissions, real inference, verification, consent, geographic hierarchy and concurrency.
+
+Browser QA exercises the eight-step walkthrough, reload/resume, all experience modes, missing inputs, a delayed request, model failure, chat fallback, report consent/export, phone frame bounds, keyboard-height handling, larger text, dark mode and role layouts. It also verifies that the bundled font actually loaded and that the three-window launcher retains distinct users after reload.
+
+QA intentionally disables Qwen to validate a repeatable outage fallback. It does not claim live Qwen generation. The deliberate delayed/503 requests are browser test cases; the ordinary app's successful AVM requests use the real model.
+
+Screenshots, recordings and logs are written to ignored `qa-results/`. Failed checks exit nonzero. Inspect them before recording. A focused run is available:
+
+```bash
+.venv/bin/python demo.py qa --browsers chromium
+```
+
+On supported Linux hosts, Playwright may need OS libraries: run `npx playwright install --with-deps chromium webkit` with your normal administrator approval. Physical iPhone Safari, VoiceOver and older-adult usability still require device/user testing; WebKit automation is not a substitute.
+
+## 7. Working, simulated and planned elements
+
+| Area | What this release actually does |
 | --- | --- |
-| LightGBM | Inference thật trên CPU, cùng artifact của demo, có native SHAP và hash. Phạm vi nhà đất Hà Nội trong catalog lịch sử. |
-| Hierarchical calibration | Tùy chọn residual calibration nghiên cứu trên LightGBM. Không phải pooled structural hierarchy/land-house-macro mới. |
-| Financial health | Quy tắc deterministic hiện có, giải thích thành phần và version; hồ sơ đầu vào giả lập/tự khai. Không là credit score chính thức. |
-| Peer percentile | So sánh với 100 điểm giả lập, có nhãn. Không có cohort khách hàng ngân hàng thật. |
-| Documents | Sáu PDF/PNG có watermark, tạo tại thời điểm setup. PDF text extraction hoạt động; PNG cần Tesseract hoặc Apple Vision. Chỉ mẫu tích hợp được nhận. |
-| Human review | Có thật. OCR_PENDING không được tự chuyển thành HUMAN_VERIFIED. Authenticator phải duyệt. |
-| Ask Finx | Giải thích và điều hướng theo evidence. Không có Qwen thì fallback deterministic có nhãn; có Qwen thì JSON/ID/action vẫn bị kiểm tra. |
-| Borrowing | Mô phỏng deterministic, giả định lãi suất/kỳ hạn; không lãi suất live hay phê duyệt tín dụng. |
-| Reports | Preview và xuất HTML sau consent, lưu nguồn/trạng thái/snapshot. Có thể Print → Save as PDF từ trình duyệt. |
-| Map | Leaflet nội bộ, basemap OpenStreetMap cần internet. Giá là thống kê lịch sử, marker có thể là vị trí gần đúng của quận; không phải nhà rao bán live của agent. |
-| Macro research console | Trang thông báo thiếu tích hợp (safe stub). API 8062/corpus không nằm trong gói này; không coi đây là tính năng live của bản clone. |
-| Banking / native iOS | Không có API ngân hàng, lịch sử giao dịch thật hay bản cài iOS. |
+| UI and navigation | Working shared English UI, local font/mascot/logo/Leaflet, responsive web/iPhone preview, three roles, saved drafts and progress |
+| AVM | Actual CPU LightGBM prediction and native SHAP with frozen artifact hashes; historical Hanoi landed-house asking-price scope |
+| Hierarchy option | Existing research residual calibration on LightGBM; not the newer pooled structural land/house/macro hierarchy |
+| Financial health | Existing deterministic demo rules, stored evidence, component explanations and scoring version |
+| Comparison group | **100 synthetic peer scores**, not a live bank customer cohort |
+| Documents | Fresh watermarked samples; PDF text extraction; PNG OCR needs an installed local engine; only built-in samples accepted |
+| Verification | Actual human approval gate; OCR pending never means verified income |
+| Ask Finx | Deterministic explanations by default; optional private Qwen selects bounded evidence/actions; trusted code renders numbers and labels |
+| Loans | Hypothetical fixed-payment scenarios and sensitivity, no live rates or eligibility claims |
+| Reports | Consented HTML export with snapshot/evidence provenance; browser PDF printing available |
+| Map | Historical street aggregates; OpenStreetMap tiles require internet; positions may be approximate district centers, not live agent listings |
+| Macro research | Explicit unavailable-integration page; separate research API/corpus are not bundled and do not change customer decisions |
+| Banking / native iOS | Planned integrations, not implemented banking APIs or an installable iOS app |
 
-Khoảng dự đoán nominal 90% **không** có nghĩa “chắc chắn đúng 90%”. Benchmark nghiên cứu riêng trên giá chào bán có MedAPE 33.35%, coverage thực nghiệm khoảng 83.5%; không coi đó là độ chính xác đã xác nhận của mọi đầu vào/mọi bản model. Macro chưa điều chỉnh giá hay điểm khách hàng trong bản này.
+A **nominal 90% prediction interval is not 90% calibrated certainty**. Separate research on asking prices reported median APE **33.35%** and empirical coverage about **83.5%**; these are not newly measured guarantees for every input or artifact in this demo. This release does not alter the model, scoring formula, benchmark results or OCR approval policy.
 
-## 6. Qwen tùy chọn
+## 8. Optional live Qwen
 
-Bản cơ bản chạy được khi Qwen vắng mặt. Không đưa giấy tờ/hồ sơ khách hàng đến OpenAI hoặc dịch vụ LLM bên ngoài.
+No GPU or VPN is needed for the base recording. Do not send customer documents or records to external LLM services.
 
-Nếu đã có quyền vào máy chạy Qwen3.5-9B ở loopback 8061, mở tunnel trong terminal riêng:
+If an authorized operator already runs Qwen3.5-9B on loopback port 8061, keep this SSH tunnel open:
 
 ```bash
 ssh -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=20 \
   -L 127.0.0.1:8061:127.0.0.1:8061 YOUR_AUTHORIZED_SSH_ALIAS
 ```
 
-Sau đó, trong terminal chạy app:
+In the app terminal before starting the server:
 
 ```bash
 export VINFINX_QWEN_URL=http://127.0.0.1:8061/vinfinx-api
@@ -169,79 +237,73 @@ export VINFINX_QWEN_ORIGIN=http://127.0.0.1:4176
 .venv/bin/python demo.py serve
 ```
 
-Origin phải được server Qwen cho phép. URL loopback là bắt buộc. Không có private key, token, mật khẩu server, địa chỉ nội bộ hoặc Qwen weights trong repo. Không mở port 8061 công khai. Kiểm tra **một câu hỏi thực tế** và mode trả về; health endpoint online chưa chứng minh mọi lần generation thành công.
+The operator must allow that origin. Never expose port 8061 publicly. Inspect **Check services**, then ask a real question and inspect the response mode. A healthy endpoint alone does not prove generation works. When Qwen is unavailable or its output fails validation, Finx explains stored evidence deterministically and labels the mode.
 
-Adapter ở `prototype/vinfinx/qwen_api.py`. Hướng dẫn dành cho người vận hành GPU: [docs/QWEN.md](docs/QWEN.md). Người chỉ quay demo không cần cài PyTorch/GPU dependencies vào môi trường app.
+Qwen weights, SSH keys and GPU dependencies are not bundled. Operator instructions and the adapter contract are in [docs/QWEN.md](docs/QWEN.md). The original [AI engineering handoff](prototype/vinfinx/AI_ENGINEERING_HANDOFF.md) describes broader research work, not a promise that all of it ships here.
 
-## 7. Kiểm thử trước buổi quay
+## 9. Windows and alternate ports
 
-```bash
-.venv/bin/python demo.py test
-# Nếu có Node.js:
-node --test prototype/vinfinx/local_app/test_ui.cjs prototype/vinfinx/local_app/test_ios.cjs prototype/vinfinx/local_app/test_journey.cjs
+Windows commands (installation on Windows is not yet validated):
+
+```powershell
+py -3.12 setup_demo.py --with-browser
+.venv\Scripts\python.exe demo.py serve
+# Another terminal:
+.venv\Scripts\python.exe demo.py prepare
+npm run record
 ```
 
-Backend tests tạo database tạm và chạy server ở cổng tạm, kiểm tra model thật, phân quyền và concurrency. Không reset database quay. Đây không phải full production audit hay kiểm thử physical iPhone Safari.
+For PNG, install Tesseract and set `VINFINX_TESSERACT` to its executable. LightGBM may need the Microsoft Visual C++ runtime. Use the PDF flow if image OCR is unavailable, and call it **PDF text extraction**, not image OCR.
 
-Checklist thủ công:
-
-- Cả ba tab đăng nhập, reload vẫn đúng role.
-- Customer 01 có giá và khoảng giá; ward/street thuộc district/ward đã chọn.
-- PDF mẫu đang pending; Advisor không thể tự duyệt; Authenticator có hàng chờ.
-- Ask Finx có trả lời và nhãn mode đúng tình trạng thực tế.
-- Báo cáo có nguồn/trạng thái và yêu cầu consent.
-- Kiểm tra iPhone preview, chữ lớn, light/dark; không có nội dung tràn viền.
-- Thử thao tác một lượt trước khi bấm Record. Không quay màn hình chứa mật khẩu.
-
-## 8. Dữ liệu, cấu trúc và khởi động lại
-
-```text
-README.md                      Hướng dẫn cho người quay
-setup_demo.py                  Cài venv, tải/kiểm tra assets, tạo tài khoản
-demo.py                        init / accounts / serve / prepare / test
-requirements.txt               Runtime app, không gồm Qwen GPU
-assets.lock.json               Release và SHA-256 các artifact
-prototype/vinfinx/local_app/    Backend, UI chung cho ba role, tests
-prototype/vinfinx/qwen_api.py   Adapter Qwen tùy chọn
-.runtime/                      Model + catalog tải về, ignored
-.demo-state/                   Database, mật khẩu, mẫu, uploads, ignored
-.venv/                         Môi trường Python, ignored
-```
-
-Model weights, fitted transformer, catalog tổng hợp nằm trong **private Release asset**, không trong lịch sử Git. Không có Phase 1–3 raw datasets, database đang quay của chủ dự án, bank records hay credentials trong bản phát hành. Bộ lương được tạo mới tại setup và có nhãn giả lập rõ ràng. Các file tham số model, gồm hierarchy calibration, được giữ nguyên từ bản demo.
-
-`Ctrl+C` dừng server. Chạy lại `demo.py serve` dùng cùng `.demo-state` sẽ giữ tài khoản, hồ sơ, review và audit. Chạy setup lại giữ state cũ. Không xóa `.demo-state` để “sửa lỗi” nếu cần giữ video/session đang quay.
-
-Nếu 4176 đã được sử dụng:
+If port 4176 is occupied, choose the same alternate port in every command:
 
 ```bash
 .venv/bin/python demo.py serve --port 4187
 .venv/bin/python demo.py prepare --port 4187
+npm run record -- --port 4187
 ```
 
-Mở `http://127.0.0.1:4187/?demo=ios`. Server chỉ bind loopback. Việc deploy public/HTTPS là một công việc riêng, không nằm trong quick start này.
+Do not stop an unknown service to free a port. Update the Qwen allowed origin when changing ports.
 
-## 9. Troubleshooting
+## 10. Troubleshooting
 
-| Hiện tượng | Cách xử lý |
+| Symptom | Action |
 | --- | --- |
-| Clone/Release báo 404 | Repo private: chủ repo cần thêm GitHub account của bạn làm collaborator; chấp nhận invitation, `gh auth status`. |
-| `gh` không tìm thấy | Cài GitHub CLI hoặc nhận ZIP chính xác từ chủ repo và dùng `--assets`. |
-| Python không phải 3.12 | Dùng `python3.12` hoặc `py -3.12`, không sửa pin sklearn tùy ý vì transformer đã serialize. |
-| LightGBM lỗi `libomp` trên Mac | `brew install libomp`, chạy lại server từ `.venv`. |
-| Thiếu model / checksum mismatch | Chạy setup với đúng private release. Không bỏ kiểm tra hash. |
-| PNG không đọc được | Cài Tesseract, kiểm tra `tesseract --version`; đặt `VINFINX_TESSERACT` nếu không có trong PATH. Trong lúc đó dùng Text PDF và nói rõ PDF text extraction. |
-| `Qwen Offline` | Bản thân app vẫn chạy. Chỉ nói đang dùng Evidence mode; muốn live Qwen phải kiểm tra VPN, quyền SSH, tunnel và service GPU. |
-| Tài khoản không đúng | Xem `demo.py accounts` với đúng `--state`; không dùng password từ máy khác. |
-| Ba tab đổi cùng role | Tách browser profiles hoặc Safari private tabs mới, rồi đăng nhập lại. |
-| Sau sửa UI còn bản cũ | Reload bằng `⌘R`/Ctrl+R. Server trả assets với `Cache-Control: no-store`. |
-| Đã duyệt nên mất nút review | Đúng workflow: không duyệt lại cùng record. Dùng state take2 mới để quay lại pending. |
-| Finx không biết giá vừa preview | Save and send for review để lưu; chat/report sử dụng bằng chứng đã lưu. |
-| Map không tải nền | Cần mạng để lấy OSM tiles. Không ảnh hưởng các engine local. |
-| Báo cáo không phải PDF download | Export hiện là HTML; mở file và dùng Print → Save as PDF nếu cần. |
+| Repository or Release 404 | Confirm repository visibility/access. For a private repo, accept the collaborator invitation and run `gh auth status`. |
+| Python/transformer error | Use Python 3.12 and the pinned requirements; do not independently upgrade scikit-learn. |
+| Missing model or hash mismatch | Obtain the exact locked Release ZIP and rerun setup. Do not suppress hash checks. |
+| Browser executable missing | Run `npm ci --ignore-scripts`, then `npm run browsers`. |
+| Browser fails on Linux | Install the matching Playwright OS dependencies; inspect the launch error. |
+| UI differs from the video | Use the same tag and `npm run record`, check viewport and text size, and confirm the local Nunito font loaded. |
+| An old journey opens | The browser has saved progress. Launch fresh contexts with `npm run record`; this preserves database records. |
+| Review is already approved | Use a new `--state` take; approvals are not silently undone. |
+| Three tabs switch to the same role | Cookies are shared. Use the three-context launcher or separate browser profiles. |
+| PNG extraction fails | Install/check Tesseract or use the text PDF sample. |
+| Qwen offline | The app still works with labelled rule-based assistance. Check the authorized tunnel/service for live Qwen. |
+| Chat/report lacks a previewed estimate | Save the estimate first; a preview is not stored evidence. |
+| Map tiles do not load | Check internet access; historical street list and financial functions are still local. |
+| Service exits when terminal closes | Keep the server terminal open during recording; use `Ctrl+C` to stop deliberately. |
 
-## 10. Quyền sử dụng và bàn giao
+## 11. Files and data boundaries
 
-Repo private dành cho nhóm dự án và người được mời quay demo. Không tự cấp giấy phép mã nguồn mở hoặc quyền thương hiệu của ngân hàng. Logo đối tác được dùng theo sự cho phép mà chủ dự án cung cấp; không hàm ý app đã được ngân hàng phê duyệt chính thức. Leaflet có license trong `prototype/vinfinx/local_app/assets/vendor/LICENSE.txt`; giữ attribution OpenStreetMap. Không đưa credentials vào commit.
+```text
+README.md                         Setup, recording and troubleshooting
+VALIDATION.md                     Observed release checks and remaining limits
+docs/REPRODUCIBILITY.md            Version/state/UI reproducibility contract
+setup_demo.py                     Hash-check assets, install, provision
+demo.py                          init / accounts / serve / prepare / qa / test
+requirements.txt                  Pinned app runtime (no GPU stack)
+package.json + package-lock.json  Locked browser automation tools
+assets.lock.json                  Unchanged model Release and SHA-256 hashes
+scripts/                          Portable QA and isolated-role launcher
+prototype/vinfinx/local_app/       Shared UI, backend and engine adapters
+.runtime/                         Downloaded model/catalog; ignored
+.demo-state*/                     Credentials, DB, samples and uploads; ignored
+qa-results/                       Generated screenshots/logs/video; ignored
+```
 
-Xem [VALIDATION.md](VALIDATION.md) để biết những gì thực sự đã kiểm thử trong bản đóng gói này. AI handoff gốc được giữ ở `prototype/vinfinx/AI_ENGINEERING_HANDOFF.md`; các phần nghiên cứu mô tả trong đó không mặc nhiên được triển khai trong demo.
+Model files and the generated market catalog are Release assets, not Git history. Generated datasets, customer documents, passwords, keys and databases are excluded from commits. The model files are unchanged from the first standalone demo release.
+
+Bundled Nunito is licensed under SIL OFL 1.1; its license and pinned source are under `assets/fonts/`. Leaflet's license is under `assets/vendor/`. Preserve OpenStreetMap attribution. Partner branding is included under the authorization supplied by the project owner; it does not imply official bank approval. Repository visibility does not grant a new source-code or bank-brand license.
+
+See [VALIDATION.md](VALIDATION.md) for actual test results and platform limits.

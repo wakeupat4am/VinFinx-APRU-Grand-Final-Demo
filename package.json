@@ -1,0 +1,13 @@
+{
+  "name": "vinfinx-apru-grand-final-demo",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Reproducible English three-role recording demo",
+  "engines": { "node": ">=22 <25" },
+  "scripts": {
+    "test": "node --test prototype/vinfinx/local_app/test_ui.cjs prototype/vinfinx/local_app/test_ios.cjs prototype/vinfinx/local_app/test_journey.cjs",
+    "browsers": "playwright install chromium webkit",
+    "record": "node scripts/open_roles.cjs"
+  },
+  "devDependencies": { "playwright": "1.64.1" }
+}

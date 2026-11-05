@@ -12,3 +12,9 @@ __pycache__/
 prototype/vinfinx/local_app/assets/market.json
 prototype/vinfinx/local_app/pilot-results/
 prototype/vinfinx/local_app/test-results/
+
+node_modules/
+.qa/
+.recording-state*/
+qa-results/
+playwright-report/

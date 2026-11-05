@@ -184,7 +184,7 @@ class Handler(BaseHTTPRequestHandler):
             if path=='/healthz':return self.send({'status':'alive','service':BRAND})
             if path.startswith('/assets/') or path in ['/app.js','/app.css']:
                 candidate=(HERE/path.lstrip('/')).resolve()
-                if not candidate.is_relative_to(HERE) or not candidate.is_file() or candidate.suffix not in ['.png','.svg','.css','.js']:
+                if not candidate.is_relative_to(HERE) or not candidate.is_file() or candidate.suffix not in ['.png','.svg','.css','.js','.ttf']:
                     raise Error(404,'Asset not found')
                 return self.send(candidate.read_bytes(),kind=mimetypes.guess_type(candidate)[0] or 'application/octet-stream')
             if path=='/api/me':return self.send({'user':store.user_for(self.token())})
