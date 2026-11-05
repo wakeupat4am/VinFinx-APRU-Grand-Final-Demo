@@ -432,6 +432,43 @@ async function approvalHandoff(browser){
   for(const context of contexts)await context.close();
   return {pendingToVerified:true,advisorCannotApprove:true,reportProvenance:true};
 }
+async function detailComparison(browser){
+ const context=await browser.newContext({viewport:{width:390,height:844},locale:'en-US',colorScheme:'light',reducedMotion:'reduce'});
+ const page=await context.newPage();page.setDefaultTimeout(20000);
+ await login(page,5);await choose(page);
+ const snapshot=await (await page.request.get(base+'/api/summary')).json();
+ await page.locator('.detail-demo>summary').click();
+ const results=[];
+ for(let i=0;i<3;i++){
+   const response=page.waitForResponse(r=>r.url().endsWith('/api/inference')&&r.request().method()==='POST');
+   await page.locator('[data-detail-next]').click();
+   const r=await response;assert.equal(r.status(),200);
+   const value=(await r.json()).result;assert(value.inference.live&&value.detail_interval.applied);
+   results.push(value);
+   await page.waitForFunction(n=>document.querySelectorAll('.detail-comparison li').length===n,i+1);
+   const text=await page.locator('.detail-comparison li').nth(i).textContent();
+   assert(text.includes(new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(value.low)));
+ }
+ assert.equal((await (await page.request.get(base+'/api/summary')).json()).property?.id,snapshot.property?.id);
+ for(let i=1;i<3;i++)assert(results[i].high-results[i].low<results[i-1].high-results[i-1].low);
+ await page.locator('.detail-takeaway').scrollIntoViewIfNeeded();
+ await capture(page,'detail-comparison-live');
+ await page.setViewportSize({width:320,height:568});await page.locator('#shell .ios-mobile-text').click();
+ await page.locator('[aria-label="Dark mode"]').last().click();await capture(page,'detail-comparison-small-dark-large');
+ await page.setViewportSize({width:390,height:844});
+ await page.locator('.detail-demo>summary').click();
+ await page.locator('#districtSelect').selectOption('quận đống đa');await page.locator('[name=area]').fill('52.3');
+ await page.locator('[data-explanation=property_optional]>summary').click();
+ await page.locator('#wardSelect').selectOption('phường quang trung');await page.locator('#streetSelect').selectOption('đường thái hà');
+ for(const [field,value] of Object.entries({floors:'4',frontage:'4',road:'4',bedrooms:'3',bathrooms:'3'}))await page.locator(`[name=${field}]`).fill(value);
+ await page.locator('[name=method]').selectOption('detail_aware');
+ const saved=await predict(page,'button[type=submit]:not([data-preview])');
+ assert(saved.result.detail_interval.applied);
+ const report=await (await page.request.get(base+'/api/report/preview')).json();
+ assert(report.html.includes(saved.result.detail_interval.policy_sha256));
+ await next(page);await stage(page,2);await capture(page,'detail-aware-saved-result');
+ await context.close();return {actualRequests:4,profileUnchangedByComparison:true,reportPolicyHash:true};
+}
 (async()=>{
   const engine=process.env.VINFINX_BROWSER||'chromium';
   const browser=await pw[engine].launch({headless:true});
@@ -454,6 +491,7 @@ async function approvalHandoff(browser){
     await roleLayout(browser,engine);
     results.customerParity=await customerParity(browser);
     results.approvalHandoff=await approvalHandoff(browser);
+    results.detailComparison=await detailComparison(browser);
     results.previewBrowserMs=inferenceTimes;
     fs.writeFileSync(path.join(out,engine+'.json'),JSON.stringify(results,null,2)+'\n');
     console.log(JSON.stringify(results));

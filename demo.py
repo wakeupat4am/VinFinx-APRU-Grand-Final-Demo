@@ -44,8 +44,10 @@ def main():
             print(f"{a['role']:14} {a['email']:34} {a['password']}")
         print('Generated passwords are local to this installation. Do not record or commit this output.')
         return
-    lock=json.loads((ROOT/'assets.lock.json').read_text())
-    for name,digest in lock['files'].items():
+    locked_files={}
+    for filename in ['assets.lock.json','detail-assets.lock.json']:
+        locked_files.update(json.loads((ROOT/filename).read_text())['files'])
+    for name,digest in locked_files.items():
         path=APP/'assets/market.json' if name=='market.json' else ROOT/'.runtime'/name
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=digest:
             raise SystemExit('Missing or modified trusted asset: '+name+'. Run setup_demo.py.')
@@ -59,7 +61,7 @@ def main():
         import serve
         serve.main()
     elif args.command == 'test':
-        subprocess.run([sys.executable,'-m','unittest','test_pilot','-v'],cwd=APP,check=True)
+        subprocess.run([sys.executable,'-m','unittest','test_pilot','test_detail_intervals','-v'],cwd=APP,check=True)
     elif args.command == 'prepare':
         # Uses normal authenticated API operations; never approves or rewrites an existing profile.
         base=f'http://127.0.0.1:{args.port}'

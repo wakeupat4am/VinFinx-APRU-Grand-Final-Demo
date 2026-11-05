@@ -54,7 +54,7 @@ function head(title,sub,action=''){return `<div class="page-head"><div><span cla
 function stat(label,value,note,icon='↗'){return `<article class="card hover"><div class="stat-label">${label}<span class="stat-icon">${icon}</span></div><div class="stat-number">${value}</div><div class="stat-footer">${note}</div></article>`;}
 function appointmentButton(){return button('Request a consultation','appointment','primary');}
 function reportButton(){return button('View report','report');}
-async function signedOut(){navigationVersion++;chatRequest?.abort();chatRequest=null;$('#finxRequestStatus').hidden=true;workspace.reset();journey.abandon();journey.reset();S.previews.clear();S.user=null;S.summary=null;if(S.map){S.map.remove();S.map=null;}$('#content').replaceChildren();$('#shell').hidden=true;$('#login').hidden=false;$('#password').value='';for(const d of $$('dialog[open]'))d.close();}
+async function signedOut(){navigationVersion++;chatRequest?.abort();chatRequest=null;$('#finxRequestStatus').hidden=true;workspace.reset();if(typeof detailDemo!=="undefined")detailDemo.reset();journey.abandon();journey.reset();S.previews.clear();S.user=null;S.summary=null;if(S.map){S.map.remove();S.map=null;}$('#content').replaceChildren();$('#shell').hidden=true;$('#login').hidden=false;$('#password').value='';for(const d of $$('dialog[open]'))d.close();}
 async function signIn(user){S.user=user;journey.load(user,true);S.cid=user.customer_id||'minh';$('#login').hidden=true;$('#shell').hidden=false;$('#roleName').textContent=roles[user.role];$('#userName').textContent=sentence(user.email.split('@')[0]);$('#avatar').textContent=user.role.slice(0,2).toUpperCase();$('#workspaceTag').textContent=roles[user.role];$('.assistant-launcher').hidden=user.role==='authenticator';S.market=await api('/api/market').catch(()=>({districts:[],streets:[],ways:[],notice:'Could not load area data.'}));if(journey.active())await journey.go();else await navigate(NAV[user.role][0][0]);api('/api/status').then(x=>{if(S.user===user)S.status=x;}).catch(()=>{});}
 async function navigate(view,cid=S.cid){if(!S.user||!NAV[S.user.role].some(x=>x[0]===view))return;workspace.remember();const version=++navigationVersion;S.cid=cid;S.view=view;if(typeof journey!=='undefined')journey.syncStory();if(S.map){S.map.remove();S.map=null;}$('#nav').innerHTML=NAV[S.user.role].map(([key,icon,label])=>`<button data-nav="${key}" class="${view===key?'active':''}" ${view===key?'aria-current="page"':''}><span>${icon}</span>${label}</button>`).join('');$('#pageLabel').textContent=NAV[S.user.role].find(x=>x[0]===view)[2];$('.sidebar').classList.remove('open');$('#content').innerHTML='<div class="loading"><div class="spinner"></div>Loading your workspace…</div>';
  try{if(S.user.role!=='authenticator'){if(S.user.role==='advisor'){const customers=await api('/api/customers');if(version!==navigationVersion)return;S.customers=customers;if(!S.customers.some(x=>x.profile.id===S.cid))S.cid=S.customers[0].profile.id;}const summary=await api('/api/summary?customer='+S.cid);if(version!==navigationVersion)return;S.summary=summary;}await render(version);if(version===navigationVersion&&S.user){workspace.restore();if(typeof journey!=='undefined'){journey.decorate();journey.track('feature_opened',view);const title=$('#content h1');title?.setAttribute('tabindex','-1');title?.focus({preventScroll:true});if(journey.showing?.())$('#content').scrollTop=0;}}}catch(e){if(version===navigationVersion)$('#content').innerHTML=`<div class="notice warning">${esc(e.message)} <button type="button" class="button" data-nav="${esc(view)}">Try again</button></div>`;}}
@@ -76,18 +76,20 @@ function propertyCard(s){
  <p>Positive and negative values show how each factor influences the model estimate.</p>
  <div>${factorList(r)}</div><p>If the range is wide, review the property details and talk to an advisor before relying on the estimate.</p>`;
  const provenance=`<dl class="trace-grid"><div><dt>Version</dt><dd>${esc(r.model_version)}</dd></div>
- <div><dt>Method</dt><dd>${r.method==='hierarchical'?'LightGBM + hierarchical calibration (research)':'LightGBM'}</dd></div>
+ <div><dt>Method</dt><dd>${r.method==='detail_aware'?'LightGBM + detail-aware ranges (research)':r.method==='hierarchical'?'LightGBM + hierarchical calibration (research)':'LightGBM'}</dd></div>
  <div><dt>Calculated</dt><dd>${v.computed_at?when(v.computed_at):'Unavailable'}</dd></div>
  <div><dt>Training data cutoff</dt><dd>Unavailable in this record</dd></div>
  ${trace?`<div><dt>Inference ID</dt><dd>${esc(trace.id)}</dd></div><div><dt>SHA-256</dt><dd>${esc(r.model_sha256)}</dd></div>`:''}</dl>
  ${Number.isFinite(r.nominal_coverage)?`<p>Nominal prediction interval: ${Math.round(100*r.nominal_coverage)}%. Actual coverage can vary.</p>`:''}
  <p>A separate asking-price benchmark reported 33.35% median absolute percentage error and 83.5% coverage for a nominal 90% interval. These results describe the research test set.</p>
  <p>This estimate uses historical listings. Sale prices can differ from asking prices.</p>
+ ${r.detail_interval?`<p>Detail policy: ${esc(r.detail_interval.version||r.detail_interval.status)}. ${esc(r.detail_interval.note)} ${esc(r.detail_interval.reason||'')}</p><p>Policy SHA-256: ${esc(r.detail_interval.policy_sha256||'Unavailable')}.</p>`:''}
  ${geography.length?`<p>Missing locations or locations outside the training data: ${geography.map(([key])=>esc(({district:'district',ward:'ward',street:'street'})[key]||key)).join(', ')}.</p>`:''}`;
  return `<article class="card valuation-card"><div class="card-head"><h2>Property price range</h2>${journey.chip(v.status)} ${badge(p.status)}</div>
  <p>${esc(p.input.ward?place(p.input.ward):'Ward unknown')}, ${esc(place(p.input.district))} · ${esc(p.input.area)} m²</p>
  <div class="avm-range"><span class="eyebrow">ESTIMATED ASKING PRICE</span><strong>${vndAmount(r.low)} <span>to</span> ${vndAmount(r.high)}</strong></div>
  <p><strong>Why a range?</strong> Historical asking prices vary. The sale price may differ.</p>
+ ${r.detail_interval?`<p class="notice"><strong>${r.detail_interval.applied?r.detail_interval.fields_present.length+" of 5 structural details supplied":"Conservative fallback"}</strong><br>${r.detail_interval.applied?"Research interval based on measured missing-field errors. More detail does not guarantee a more accurate price.":esc(r.detail_interval.reason)}</p>`:""}
  ${v.status==='STALE'?'<p class="notice warning">This estimate is over 90 days old. Recalculate it before using the result.</p>':''}
  ${journey.detail('See the central estimate and key factors',numbers,'valuation_numbers')}
  ${journey.detail('See the data, model and limitations',provenance,'valuation_provenance')}
@@ -134,7 +136,7 @@ function propertyPage(){
  const fields=[['floors','Floors','1','30','1','3'],['frontage','Frontage (m)','0','100','.1','4'],
   ['road','Road or alley width (m)','0','100','.1','5'],['bedrooms','Bedrooms','0','100','1','3'],['bathrooms','Bathrooms','0','100','1','2']];
  const optional=fields.map(([name,label,min,max,step,example])=>`<label>${label}<input name="${name}" type="number" min="${min}" max="${max}" step="${step}" value="${field(name)}" placeholder="Example: ${example}"></label>`).join('');
- return head('Property valuation','Enter a district and land area. You can add other details later.',reportButton())+customerPicker()+
+ return head('Property valuation','Enter a district and land area. You can add other details later.',reportButton())+customerPicker()+detailDemo.panel()+
  `<div class="grid ${guided?'valuation-input-only':''}"><article class="card"><h2>Property details</h2>
  <form id="valuationForm"><div class="form-grid">
  <label>District <select name="district" id="districtSelect" required></select></label>
@@ -144,7 +146,7 @@ function propertyPage(){
  <p class="tiny">Address options follow the historical listing catalog. Choose a district before choosing a ward or street.</p>
  <div class="form-grid"><label>Ward<select name="ward" id="wardSelect"></select></label><label>Street<select name="street" id="streetSelect"></select></label>${optional}
  <label>Property type<select name="subtype"><option value="normal_house">Landed house</option><option value="alley_frontage_house">Alley-front house</option><option value="frontage_house">Street-front house</option><option value="villa">Villa</option></select></label>
- <label>Method<select name="method"><option value="lightgbm">LightGBM</option><option value="hierarchical">Hierarchical calibration (research)</option></select></label></div>`,'property_optional')}
+ <label>Method<select name="method"><option value="lightgbm">LightGBM</option><option value="hierarchical">Hierarchical calibration (research)</option><option value="detail_aware">Detail-aware ranges (research)</option></select></label></div>`,'property_optional')}
  <p class="tiny">This demo covers landed homes in Hanoi and uses historical asking prices.</p>
  <div class="form-footer"><button class="button primary" type="submit" data-preview>Get price range</button><button class="button" type="submit">Save and send for review</button></div><p class="story-state" id="valuationStatus" role="status"></p></form></article>
  <div id="valuationResult" aria-live="polite">${guided?'':propertyResult()}</div></div>`;

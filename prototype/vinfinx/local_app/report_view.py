@@ -36,6 +36,9 @@ def preview(snapshot):
                   f'<p>Inference ID {esc(str(r.get("inference",{}).get("id") or "Unavailable"))}. '
                   f'Model SHA-256 {esc(str(r.get("model_sha256") or "Unavailable"))}.</p>'
                   '<p>The model uses historical asking prices. The prediction range reflects uncertainty.</p>')
+        if r.get('detail_interval'):
+            detail=r['detail_interval']
+            content+=f'<p>Research interval policy: {esc(str(detail.get("version") or detail["status"]))}. {esc(detail["note"])} Policy SHA-256: {esc(str(detail.get("policy_sha256") or "Unavailable"))}.</p>'
         if prop.get('address_review_required'):
             content+='<p>The saved address requires review. Recalculate before using this estimate.</p>'
     else:

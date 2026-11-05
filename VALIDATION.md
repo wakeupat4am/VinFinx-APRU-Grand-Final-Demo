@@ -1,5 +1,23 @@
 # Release validation — 6 November 2026
 
+## Detail-aware interval release (v1.2)
+
+- New opt-in research method; the original point estimates, SHAP, baseline/hierarchy
+  outputs, financial score and OCR approval policy are unchanged.
+- Original group-calibration/test splits: 171/429 eligible structural-complete
+  historical Hanoi listings. All 32 structural masks calibrated before test metrics.
+  Predeclared research gates passed; cohort MedAPE 30.37% → 23.65%, final observed
+  coverage 90.44%. Precise-address-only sample was insufficient and is not claimed.
+- **12 backend tests passed**, including all-mask point parity, monotone relative
+  widths, ignored blank fields, out-of-scope widening, policy hash rejection and
+  actual narrowing for the declared synthetic example. Existing 10-user regression
+  still passed with 182 requests and 64 real inferences, no unexpected failures.
+- Both Chromium and WebKit passed the extended live-comparison UI test, manual
+  detail-aware input/save, unchanged saved profile after comparison previews,
+  phone/dark/larger-text layout, and policy-hash report provenance. The full
+  eight-step/three-role QA still passed on both engines.
+- Detailed measurements and limitations: [DETAIL_INTERVAL_RESULTS.md](docs/DETAIL_INTERVAL_RESULTS.md).
+
 ## English recording release (v1.1)
 
 The shared app remains an actual local application, not a clickable screenshot.

@@ -13,9 +13,25 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 REPO = 'wakeupat4am/VinFinx-APRU-Grand-Final-Demo'
 
+def install_pack(lock, supplied, runtime):
+    archive=supplied.resolve() if supplied else runtime/lock['filename']
+    if not archive.exists():
+        if supplied:raise SystemExit('Asset ZIP does not exist: '+str(archive))
+        subprocess.run(['gh','release','download',lock['release'],'--repo',REPO,'--pattern',lock['filename'],'--dir',str(runtime)],check=True)
+    if hashlib.sha256(archive.read_bytes()).hexdigest()!=lock['sha256']:raise SystemExit('Asset ZIP checksum mismatch: '+lock['filename'])
+    with zipfile.ZipFile(archive) as bundle:
+        if set(bundle.namelist())!=set(lock['files']) or len(bundle.namelist())!=len(lock['files']):raise SystemExit('Unexpected asset archive members')
+        for name,expected in lock['files'].items():
+            data=bundle.read(name)
+            if hashlib.sha256(data).hexdigest()!=expected:raise SystemExit('Asset checksum mismatch: '+name)
+            target=runtime/name
+            if not target.resolve().is_relative_to(runtime.resolve()):raise SystemExit('Unsafe asset path')
+            target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--assets', type=Path, help='Owner-supplied asset ZIP; otherwise download the private release with gh')
+    parser.add_argument('--detail-assets',type=Path,help='Exact supplementary research interval ZIP for offline installation')
     parser.add_argument('--with-browser',action='store_true',help='Install the locked recording/QA browser tools (requires Node.js and npm)')
     args = parser.parse_args()
     if sys.version_info[:2] != (3, 12):
@@ -24,26 +40,11 @@ def main():
     lock = json.loads((ROOT/'assets.lock.json').read_text())
     runtime = ROOT/'.runtime'
     runtime.mkdir(exist_ok=True)
-    archive = args.assets.resolve() if args.assets else runtime/lock['filename']
-    if not archive.exists():
-        if args.assets:
-            raise SystemExit('Asset ZIP does not exist.')
-        subprocess.run(['gh','release','download',lock['release'],'--repo',REPO,'--pattern',lock['filename'],'--dir',str(runtime)],check=True)
-    if hashlib.sha256(archive.read_bytes()).hexdigest() != lock['sha256']:
-        raise SystemExit('Asset ZIP checksum mismatch. Obtain the exact release named in assets.lock.json.')
-    with zipfile.ZipFile(archive) as bundle:
-        if set(bundle.namelist()) != set(lock['files']):
-            raise SystemExit('Unexpected asset archive members.')
-        for name, expected in lock['files'].items():
-            data = bundle.read(name)
-            if hashlib.sha256(data).hexdigest() != expected:
-                raise SystemExit('Asset checksum mismatch: '+name)
-            target = runtime/name
-            if not target.resolve().is_relative_to(runtime.resolve()):
-                raise SystemExit('Unsafe asset path.')
-            target.parent.mkdir(parents=True,exist_ok=True)
-            target.write_bytes(data)
-    (runtime/'model/manifest.json').write_text(json.dumps({Path(n).name:h for n,h in lock['files'].items() if n.startswith('model/')}))
+    detail=json.loads((ROOT/'detail-assets.lock.json').read_text())
+    install_pack(lock,args.assets,runtime)
+    install_pack(detail,args.detail_assets,runtime)
+    hashes={**lock['files'],**detail['files']}
+    (runtime/'model/manifest.json').write_text(json.dumps({Path(n).name:h for n,h in hashes.items() if n.startswith('model/')}))
     shutil.copyfile(runtime/'market.json', ROOT/'prototype/vinfinx/local_app/assets/market.json')
     env = ROOT/'.venv'
     python = env/('Scripts/python.exe' if os.name=='nt' else 'bin/python')

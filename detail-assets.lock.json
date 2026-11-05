@@ -1,0 +1,9 @@
+{
+  "release": "demo-v1.2.0",
+  "filename": "vinfinx-detail-intervals-v1.zip",
+  "sha256": "b6c06ac683f32c4ab6ab0daabe1536c74e1b566a6bf8f047c1c8b5f471d80674",
+  "files": {
+    "model/detail_intervals.json": "86d9839cfa78b6a68f1fa7542860a3ef62ce066827088b2742f47874ef7f41dc",
+    "detail_benchmark.json": "569a4daf181bef1c433dafe561bf4f73e1e6e652a7bfddd3a7cc5c026de74bbd"
+  }
+}

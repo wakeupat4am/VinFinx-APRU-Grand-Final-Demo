@@ -58,7 +58,16 @@ class AVM:
         if self.hybrid:
             self.artifact_hashes['hierarchy.json']=hashlib.sha256(path.read_bytes()).hexdigest()
             if manifest and expected.get('hierarchy.json')!=self.artifact_hashes['hierarchy.json']:raise RuntimeError('Hierarchy artifact integrity check failed')
-        self.version='avm-inference/2.1'
+        self.detail_policy=None;self.detail_hash=None
+        detail=ART/'detail_intervals.json'
+        if manifest and expected.get('detail_intervals.json'):
+            if not detail.is_file():raise RuntimeError('Expected detail policy missing')
+            self.detail_hash=hashlib.sha256(detail.read_bytes()).hexdigest()
+            if self.detail_hash!=expected['detail_intervals.json']:raise RuntimeError('Detail policy integrity check failed')
+            self.detail_policy=json.loads(detail.read_text())
+            from detail_intervals import validate
+            validate(self.detail_policy,self.hash,self.artifact_hashes['transform.joblib'])
+        self.version='avm-inference/2.2'
 
     def predict(self,raw):
         started=time.monotonic()
@@ -77,13 +86,15 @@ class AVM:
         finally:self.predict_lock.release()
         result['inference']={'id':secrets.token_hex(12),'version':self.version,'computed_at':time.time(),'elapsed_ms':round((time.monotonic()-started)*1000,2),
                              'input_sha256':hashlib.sha256(json.dumps(raw,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()).hexdigest(),'artifact_sha256':dict(self.artifact_hashes),'live':True}
+        if raw.get('method')=='detail_aware' and self.detail_hash:
+            result['inference']['artifact_sha256']['detail_intervals.json']=self.detail_hash
         return result
 
     def _predict(self,raw):
         import numpy as np
         frame=features(raw);x=self.transform.transform(frame[GEO+NUM]);logvalue=float(self.model.predict(x,num_threads=2)[0]);q=self.q;adjustment=0.
         method=raw.get('method','lightgbm')
-        if method not in ['lightgbm','hierarchical']:raise ValueError('Unknown model method')
+        if method not in ['lightgbm','hierarchical','detail_aware']:raise ValueError('Unknown model method')
         if method=='hierarchical':
             if not self.hybrid:raise RuntimeError('Research calibration artifact unavailable')
             h=self.hybrid['parameters']['hierarchical'];offset=h['root']
@@ -103,7 +114,13 @@ class AVM:
         for label,cats in zip(['Province','District','Ward','Street','Property subtype'],enc.categories_):
             factors.append({'factor':label,'log_contribution':float(arr[offset:offset+len(cats)].sum())});offset+=len(cats)
         for i,col in enumerate(NUM):factors.append({'factor':col.replace('_',' '),'log_contribution':float(arr[offset+i])})
+        detail_info=None
+        if method=='detail_aware':
+            from detail_intervals import apply
+            q,detail_info=apply(self.detail_policy,raw,geography,q)
+            if self.detail_hash:detail_info['policy_sha256']=self.detail_hash
         return {'value':value,'low':math.exp(logvalue-q)*1e9,'high':math.exp(logvalue+q)*1e9,'nominal_coverage':.9,
+                'detail_interval':detail_info,
                 'method':method,'model_version':'phase1-baseline-20261015','model_sha256':self.hash,
                 'calibration_log_adjustment':adjustment,'factors':sorted(factors,key=lambda v:abs(v['log_contribution']),reverse=True)[:5],
                 'geography':geography,'market_context':{'adjustment_applied':False,'status':'no_verified_live_signals'},
@@ -121,6 +138,7 @@ def readiness():
         model=get_model()
         return {'ready':True,'engine':'LightGBM CPU','version':model.version,'artifact_sha256':model.artifact_hashes,
                 'methods':[{'id':'lightgbm','ready':True,'label':'LightGBM baseline'},
-                           {'id':'hierarchical','ready':bool(model.hybrid),'label':'GBM + hierarchy residual calibration (research)'}],
+                           {'id':'hierarchical','ready':bool(model.hybrid),'label':'GBM + hierarchy residual calibration (research)'},
+                           {'id':'detail_aware','ready':bool(model.detail_policy),'label':'LightGBM + detail-aware intervals (research)'}],
                 'structural_hierarchy':{'ready':False,'reason':'Research candidate not promoted to this inference service'}}
     except Exception as exc:return {'ready':False,'engine':'LightGBM CPU','error':type(exc).__name__,'message':'Trusted model artifacts/dependencies unavailable. No synthetic price returned.'}

@@ -8,6 +8,20 @@ This release prioritizes **reproducing the experience first**: bundled typograph
 
 > **Research demo, synthetic profiles.** Property inference uses actual CPU LightGBM artifacts trained on historical asking prices. The financial-health score is an illustrative rule-based score. Neither is a formal appraisal, official credit score, verified lending offer or bank approval. There is no live banking integration.
 
+## New: show how structural details refine the range
+
+For the stage demo, open **Property → See how more details help · Live example**.
+Three clicks run actual inference with basic details, building/access details,
+then room counts. The existing synthetic example's range width decreases by about
+**46.2%**; this does not prove the individual price is correct.
+
+The optional **Detail-aware ranges (research)** method was calibrated on 171
+records and tested on 429 separate historical Hanoi asking-price records. Cohort
+MedAPE fell from **30.37% to 23.65%**; final empirical interval coverage was
+**90.44%**. Not every added field narrows a range, and accuracy is not guaranteed
+for every property. Original point-model weights, scoring and approval policy
+remain unchanged. [Results, limitations and recording script](docs/DETAIL_INTERVAL_RESULTS.md).
+
 ## 1. Recommended setup for recording
 
 ### Requirements
@@ -37,7 +51,7 @@ python3.12 setup_demo.py --with-browser
 
 The installer:
 
-1. Downloads `vinfinx-demo-assets-v1.zip` from the immutable **demo-v1** Release named in `assets.lock.json`.
+1. Downloads `vinfinx-demo-assets-v1.zip` from the immutable **demo-v1** Release named in `assets.lock.json`, plus the supplementary research-policy ZIP from **demo-v1.2.0** named in `detail-assets.lock.json`.
 2. Verifies the ZIP and every allowed member against SHA-256 hashes before loading anything.
 3. Creates `.venv`, installs the pinned Python dependencies, and runs `pip check`.
 4. Creates **10 new synthetic accounts** and six individual, watermarked PDF/PNG payslips.
@@ -45,12 +59,13 @@ The installer:
 
 No developer database, old passwords, raw property datasets or private server credentials are needed. Internet is needed for installation. Once installed, the core experience runs locally; map tiles and optional Qwen have separate dependencies.
 
-**Repeatable release:** use the `demo-v1.1.0` tag to reproduce this source version. The tag's model lock intentionally still references `demo-v1`: the model artifacts have not changed. Use `main` for subsequent updates.
+**Repeatable release:** use the `demo-v1.2.0` tag to reproduce this source version. The base model lock still references `demo-v1`: its artifacts have not changed. The separate interval-policy lock references `demo-v1.2.0`. Use `main` for subsequent updates.
 
 If you received the exact asset ZIP separately:
 
 ```bash
-python3.12 setup_demo.py --assets /absolute/path/vinfinx-demo-assets-v1.zip --with-browser
+python3.12 setup_demo.py --assets /absolute/path/vinfinx-demo-assets-v1.zip \
+  --detail-assets /absolute/path/vinfinx-detail-intervals-v1.zip --with-browser
 ```
 
 The supplied ZIP must match `assets.lock.json`. Do not bypass checksum checks. Only load the trusted project transformer: pickle/joblib files can execute code.
@@ -204,6 +219,7 @@ On supported Linux hosts, Playwright may need OS libraries: run `npx playwright 
 | --- | --- |
 | UI and navigation | Working shared English UI, local font/mascot/logo/Leaflet, responsive web/iPhone preview, three roles, saved drafts and progress |
 | AVM | Actual CPU LightGBM prediction and native SHAP with frozen artifact hashes; historical Hanoi landed-house asking-price scope |
+| Detail-aware ranges | Optional research mask calibration, real unchanged LightGBM point estimates, explicit scope/fallback and policy hashes |
 | Hierarchy option | Existing research residual calibration on LightGBM; not the newer pooled structural land/house/macro hierarchy |
 | Financial health | Existing deterministic demo rules, stored evidence, component explanations and scoring version |
 | Comparison group | **100 synthetic peer scores**, not a live bank customer cohort |
@@ -216,7 +232,7 @@ On supported Linux hosts, Playwright may need OS libraries: run `npx playwright 
 | Macro research | Explicit unavailable-integration page; separate research API/corpus are not bundled and do not change customer decisions |
 | Banking / native iOS | Planned integrations, not implemented banking APIs or an installable iOS app |
 
-A **nominal 90% prediction interval is not 90% calibrated certainty**. Separate research on asking prices reported median APE **33.35%** and empirical coverage about **83.5%**; these are not newly measured guarantees for every input or artifact in this demo. This release does not alter the model, scoring formula, benchmark results or OCR approval policy.
+A **nominal 90% prediction interval is not 90% calibrated certainty**. Separate research on asking prices reported median APE **33.35%** and empirical coverage about **83.5%**; these are not newly measured guarantees for every input or artifact in this demo. The original model weights, baseline intervals, scoring formula, benchmark results and OCR approval policy are unchanged. The optional detail-aware interval experiment is separately versioned and reported above.
 
 ## 8. Optional live Qwen
 
@@ -295,6 +311,7 @@ demo.py                          init / accounts / serve / prepare / qa / test
 requirements.txt                  Pinned app runtime (no GPU stack)
 package.json + package-lock.json  Locked browser automation tools
 assets.lock.json                  Unchanged model Release and SHA-256 hashes
+detail-assets.lock.json           Supplementary research policy and benchmark hashes
 scripts/                          Portable QA and isolated-role launcher
 prototype/vinfinx/local_app/       Shared UI, backend and engine adapters
 .runtime/                         Downloaded model/catalog; ignored
