@@ -15,6 +15,12 @@ runtime dependencies as well as the direct packages.
 
 ### Completed checks
 
+- A **clean Git clone of implementation commit `35ede32`** ran
+  `setup_demo.py --with-browser` with no copied virtual environment, database,
+  credentials or runtime assets. It downloaded the original GitHub Release ZIP,
+  verified hashes, installed the locked Python/npm dependencies, and created fresh
+  accounts. From that clone, all 22 JS checks and the complete Chromium/WebKit QA
+  runs passed, including customer parity, human approval and isolated role windows.
 - **22 JavaScript checks passed:** state/navigation, theme, draft isolation,
   iPhone shell bounds and deterministic scenario arithmetic.
 - **7 backend suites passed:** readiness/origin checks, actual model parity and
