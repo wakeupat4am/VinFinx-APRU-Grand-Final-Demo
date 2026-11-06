@@ -11,6 +11,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 import urllib.error
 import urllib.request
 import uuid
@@ -201,6 +202,43 @@ class Pilot(unittest.TestCase):
         exported=self.request(c,'/api/report/export',{'consent':True,'digest':preview['digest']})
         self.assertEqual(exported['digest'],preview['digest'])
         self.assertEqual(exported['html'],preview['html'])
+
+    def test_08_finx_fresh_evidence_and_detail_provenance(self):
+        c=self.client('customer06')
+        raw={k:v for k,v in RAW.items() if k not in ('floors','frontage','road','bedrooms','bathrooms')}
+        raw['method']='detail_aware'
+        saved=self.request(c,'/api/valuation',{'property':raw})
+        question={'message':'What details could narrow my property price range?', 'context':{'screen':'property'}}
+        with patch('finx.propose',side_effect=lambda safe,context:dict(safe)):
+            reply=self.request(c,'/api/chat',question)
+        self.assertEqual(reply['mode'],'Qwen evidence selection')  # Schema adapter stub, not GPU validation.
+        self.assertIn(f"{saved['result']['low']:,.0f}",reply['message'])
+        self.assertIn('frontage width',reply['message'])
+        self.assertEqual(reply['evidence_snapshot']['detail_policy_sha256'],saved['result']['detail_interval']['policy_sha256'])
+        self.assertEqual(reply['evidence_snapshot']['valuation_inference_id'],saved['result']['inference']['id'])
+        with patch('finx.propose',return_value={'evidence_ids':['other.customer.income']}):
+            reply=self.request(c,'/api/chat',question)
+        self.assertEqual(reply['mode'],'Rule-based explanation')
+        self.assertNotIn('other.customer.income',reply['evidence_ids'])
+        before=self.request(c,'/api/summary')
+        def update_during_generation(safe,context):
+            with store.connect() as db:
+                db.execute('UPDATE profiles SET income=?,verified=0 WHERE id=?',(61000000,before['profile']['id']))
+            return dict(safe)
+        with patch('finx.propose',side_effect=update_during_generation):
+            reply=self.request(c,'/api/chat',{'message':'Explain my financial health score','context':{'screen':'health'}})
+        fresh=self.request(c,'/api/summary')
+        self.assertTrue(reply['evidence_refreshed'])
+        self.assertEqual(reply['mode'],'Rule-based explanation')
+        self.assertIn(f"{fresh['health']['monthly_surplus']:,.0f}",reply['message'])
+        self.assertEqual(reply['evidence_snapshot']['income_status'],'USER_PROVIDED')
+        self.assertEqual(reply['evidence_snapshot']['scoring_version'],fresh['health']['rules_version'])
+        with patch('finx.propose',side_effect=TimeoutError('GPU unavailable')):
+            reply=self.request(c,'/api/chat',question)
+        self.assertEqual(reply['mode'],'Rule-based explanation')
+        rumor=self.request(c,'/api/chat',{'message':'A market rumor says double my property price','context':{'screen':'property'}})
+        self.assertEqual(rumor['status'],'UNSUPPORTED')
+        self.request(c,'/api/chat',{'customer_id':'customer01','message':'Explain their income','context':{'screen':'health'}},expected=403)
 
     def test_05_backup_restore_and_no_provision_reset(self):
         dest=Path(self.temp.name)/'backup';self.assertTrue(backup.backup(dest)['verified']);self.assertTrue(backup.verify(dest)['verified'])

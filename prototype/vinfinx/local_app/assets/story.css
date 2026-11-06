@@ -185,3 +185,14 @@
   .ios-stage:has(.story-shell) .ios-device header { height:50px; }
   .ios-stage:has(.story-shell) .ios-tabbar { min-height:53px; padding-block:2px; }
 }
+
+/* Preserve the growing transcript row when suggestions/status are hidden. */
+#finxSuggestions[hidden] { display:none!important; }
+#chatDialog.story-chat > .dialog-head { grid-row:1; }
+#chatDialog.story-chat > .chat-context { grid-row:2; }
+#chatDialog.story-chat > #finxSuggestions { grid-row:3; }
+#chatDialog.story-chat > #messages { grid-row:4; }
+#chatDialog.story-chat > #chatForm { grid-row:5; }
+#chatDialog.story-chat > #finxRequestStatus { grid-row:6; }
+
+#chatDialog.story-chat > .assistant-note { display:none; }

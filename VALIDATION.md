@@ -1,5 +1,32 @@
 # Release validation — 6 November 2026
 
+## Submission patch (v1.2.1)
+
+- 23 JavaScript checks and 13 real backend/model suites passed. Browser checks on
+  Chromium and WebKit verify one sample tap sends exactly one request, suggestions
+  disappear immediately, the transcript gains space and suggestions stay hidden
+  after closing/reopening. Dismissal resets on sign-out and is customer-scoped.
+- The existing full eight-step/three-role walkthrough, 10 viewport sizes, phone-fit
+  checks, OCR approval handoff, report provenance, and live detail comparison still
+  passed in both browsers. All 32 masks keep baseline point/SHAP parity and the
+  calibrated relative-width envelope. Artifacts are unchanged from v1.2.0.
+- Backend regression verifies saved detail-policy/inference provenance, invalid
+  Qwen output rejection, timeout fallback, market-rumor refusal, cross-customer
+  denial and profile changes during generation. The last case re-reads the evidence
+  and returns a fresh deterministic answer instead of stale numbers or status.
+- Qwen schema selection is stubbed in one integration test to exercise the contract;
+  it is **not** evidence of GPU generation. Live Qwen remains unverified: the direct
+  SSH command to cecs-server1 was rejected by public-key authentication. The app
+  truthfully uses labelled rule-based assistance. `scripts/check_qwen.py` is supplied
+  for an operator to verify actual generation after restoring authorized access.
+- Running 4187 acceptance passed after a verified 15-file state backup and restart:
+  actual current-profile chat, three real detail previews (46.2% width reduction),
+  and unchanged saved property. The real phone chat was visually inspected with
+  its suggestions hidden and reply visible. Existing accounts/state were retained.
+- 10-account regression: 182 requests, 64 actual CPU inferences, zero unexpected
+  failures; inference p95 1,027.5 ms on this Mac. No server/GPU latency claim.
+
+
 ## Detail-aware interval release (v1.2)
 
 - New opt-in research method; the original point estimates, SHAP, baseline/hierarchy

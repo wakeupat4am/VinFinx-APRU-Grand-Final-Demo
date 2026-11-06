@@ -103,3 +103,16 @@ test('Display labels retain acronyms and Vietnamese place capitalization',()=>{
   assert.equal(vm.runInContext("factorLabel('log road')",f.context),'Road width (log scale)');
   assert.equal(vm.runInContext("sentence('OCR checks')",f.context),'OCR checks');
 });
+
+test('Dismissed chat suggestions stay scoped to the customer and reset on logout', () => {
+  const f=fixture();vm.runInContext(source('assets/workspace.js'),f.context);
+  assert.equal(vm.runInContext('workspace.suggestionsDismissed()',f.context),false);
+  vm.runInContext('workspace.dismissSuggestions()',f.context);
+  assert.equal(vm.runInContext('workspace.suggestionsDismissed()',f.context),true);
+  f.context.S.cid='other';
+  assert.equal(vm.runInContext('workspace.suggestionsDismissed()',f.context),false);
+  f.context.S.cid='minh';
+  assert.equal(vm.runInContext('workspace.suggestionsDismissed()',f.context),true);
+  vm.runInContext('workspace.reset()',f.context);
+  assert.equal(vm.runInContext('workspace.suggestionsDismissed()',f.context),false);
+});

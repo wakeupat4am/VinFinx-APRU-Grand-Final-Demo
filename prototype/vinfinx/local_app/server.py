@@ -390,6 +390,12 @@ class Handler(BaseHTTPRequestHandler):
             with runtime.CHAT.enter():
                 snapshot=summary(cid)
                 result=finx.answer(message,snapshot,user['role'],context) if isinstance(context,dict) else assistant.answer(message,snapshot)
+                # Approval, income edits or a new valuation may finish during generation.
+                # Refresh trusted numbers/statuses without a second model request.
+                latest=summary(cid)
+                if isinstance(context,dict) and any(snapshot[k]!=latest[k] for k in ('profile','property','evidence')):
+                    result=finx.answer(message,latest,user['role'],context,use_qwen=False)
+                    result['evidence_refreshed']=True
             with store.connect() as db:store.audit(db,user['id'],'assistant_reply',cid,{'mode':result['mode'],'seconds':result.get('seconds'),'usage':result.get('usage',{})})
             return self.send(result)
         raise Error(404,'Not found')

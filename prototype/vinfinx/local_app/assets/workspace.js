@@ -1,6 +1,7 @@
 'use strict';
 const workspace = (() => {
   const drafts = new Map(), files = new Map(), chats = new Map(), jobs = [];
+  const dismissedSuggestions = new Set();
   let tabs = [], serial = 0, generation = 0;
   const forms = ['valuationForm', 'profileForm'];
   const key = (view = S.view, cid = S.cid) => `${S.user?.email}|${S.user?.role}|${cid}|${view}`;
@@ -80,6 +81,8 @@ const workspace = (() => {
     document.querySelector('#chatInput').value = drafts.get(key('chat'))?.text || '';
     document.querySelector('#chatForm [type=submit]').disabled = jobs.some(j => j.cid === cid && j.kind === 'chat' && j.state === 'running');
   }
+  function dismissSuggestions() { dismissedSuggestions.add(key('chat')); }
+  function suggestionsDismissed() { return dismissedSuggestions.has(key('chat')); }
   function message(cid, text, user = false, meta = '', action = null) {
     if (!chats.has(cid)) chats.set(cid, []);
     const transcript=chats.get(cid);
@@ -91,7 +94,7 @@ const workspace = (() => {
     try { sessionStorage.setItem('vinfinx.drafts', JSON.stringify([...drafts])); } catch (_) {}
   }
   function reset() {
-    generation++; drafts.clear(); files.clear(); chats.clear(); jobs.length = 0; tabs = [];
+    generation++; drafts.clear(); files.clear(); chats.clear(); dismissedSuggestions.clear(); jobs.length = 0; tabs = [];
     try { sessionStorage.removeItem('vinfinx.drafts'); } catch (_) {}
     document.querySelector('#workspaceTabs').replaceChildren();
     document.querySelector('#messages').replaceChildren();
@@ -143,5 +146,5 @@ const workspace = (() => {
   document.addEventListener('keydown', event => { if (event.key === 'Escape') { if(document.querySelector('#chatDialog').open)document.querySelector('#chatDialog').close();document.querySelector('.activity').open=false; } });
   document.addEventListener('click', event => { if(!event.target.closest('.activity'))document.querySelector('.activity').open=false; });
   appearance.apply();
-  return { propertyDraft, loanAmount, remember, restore, reset, run, message, clearDraft, syncChat, syncBusy };
+  return { dismissSuggestions, suggestionsDismissed, propertyDraft, loanAmount, remember, restore, reset, run, message, clearDraft, syncChat, syncBusy };
 })();

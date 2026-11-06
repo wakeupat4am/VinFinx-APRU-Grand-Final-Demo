@@ -22,7 +22,7 @@ In an operator-managed tmux session on the GPU host (replace both placeholders):
 ```bash
 export CUDA_VISIBLE_DEVICES=YOUR_CURRENTLY_FREE_GPU
 export VINFINX_QWEN_PATH=/operator/provisioned/Qwen3.5-9B
-export VINFINX_ALLOWED_ORIGINS=http://127.0.0.1:4176,http://localhost:4176
+export VINFINX_ALLOWED_ORIGINS=http://127.0.0.1:4176,http://localhost:4176,http://127.0.0.1:4187,http://localhost:4187
 export VINFINX_XGRAMMAR_MASK_CPU=1
 cd prototype/vinfinx
 python -m uvicorn qwen_api:app --host 127.0.0.1 --port 8061
@@ -39,3 +39,28 @@ validates model-returned evidence IDs/actions. Trusted application code supplies
 financial numbers and final labels. Do not label Evidence mode as live Qwen.
 
 The separate macro pipeline API/corpus (8062) is not included or started here.
+
+## Submission status — 6 November 2026
+
+The local UI/API release is tested, but this release does **not** certify live GPU
+inference. The configured `ssh cecs-server1` was rejected with `Permission denied
+(publickey)`; the older VPN route was unreachable. No service was deployed or GPU
+started, and no Qwen success is simulated. Restore authorized SSH access first.
+
+The app snapshots the selected customer's current stored evidence for each question.
+If income approval, profile inputs or a valuation changes during Qwen generation,
+trusted code re-reads it and renders a fresh deterministic answer. The response
+includes `assistant_version`, elapsed seconds and an `evidence_snapshot` identifying
+the score version, verification status, saved inference and interval-policy hash.
+This is fresh **stored evidence**, not real-time market/transaction data.
+
+After starting Qwen and the loopback SSH tunnel, validate actual generation:
+
+```bash
+.venv/bin/python scripts/check_qwen.py
+```
+
+This sends only a synthetic, bounded evidence-selection plan. It exits nonzero if
+health, Origin permissions, generation or JSON validation fail. It does not replace
+the application tests or prove correctness for all questions. For the current local
+recording server, use origin `http://127.0.0.1:4187`; this must be allowed on Qwen.

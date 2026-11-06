@@ -2,13 +2,14 @@
 import json
 import os
 import re
+import time
 import unicodedata
 import urllib.request
 
 import assistant
 
 TOPICS = {
-    'property': ('gia nha', 'dinh gia', 'khoang gia', 'tai san', 'bat dong san', 'property', 'valuation'),
+    'property': ('gia nha', 'dinh gia', 'khoang gia', 'tai san', 'bat dong san', 'property', 'valuation', 'house price', 'price range', 'narrower', 'narrow', 'frontage'),
     'health': ('suc khoe tai chinh', 'diem', 'dong tien', 'du phong', 'tai chinh', 'score', 'financial health', 'cash flow', 'emergency fund', 'emergency savings'),
     'documents': ('phieu luong', 'thu nhap', 'giay to', 'xac minh', 'ocr', 'chung tu', 'payslip', 'verified', 'income evidence'),
     'loan': ('vay', 'tra gop', 'tra no', 'khoan vay', 'du no', 'loan', 'borrow', 'borrowing', 'repayments'),
@@ -69,6 +70,8 @@ def plan_for(topic, phrase, role, snapshot):
     elif topic=='property':
         if prop=='MODEL_ESTIMATED':
             choices=['property.range','property.estimate','property.computed_at']
+            if snapshot['property']['result'].get('detail_interval'):
+                choices.append('property.detail_interval')
         else:
             status,question='NEEDS_EVIDENCE',('RECENT_VALUATION' if prop=='STALE' else 'PROPERTY_ESTIMATE')
     elif topic=='documents':
@@ -148,7 +151,7 @@ def propose(safe, context):
     return json.loads(result['choices'][0]['message']['content'])
 
 
-def render(topic, plan, snapshot, glossary=None):
+def render(topic, plan, snapshot, glossary=None, phrase=''):
     h=snapshot['health']; p=snapshot['profile']; e=snapshot['evidence']
     def amount(value):
         return f'{value:,.0f} VND'
@@ -169,7 +172,22 @@ def render(topic, plan, snapshot, glossary=None):
                 'The Finances screen shows how long the savings on file could cover expenses and debt payments.')
     if topic=='property':
         r=snapshot['property']['result']
-        return f"The estimated asking-price range is {amount(r['low'])} to {amount(r['high'])}. The central estimate is {amount(r['value'])}. This range reflects model uncertainty."
+        message=f"The saved estimated asking-price range is {amount(r['low'])} to {amount(r['high'])}. The central estimate is {amount(r['value'])}. "
+        if any(word in phrase for word in (' narrow', ' detail', ' wide', ' thong tin', ' thu hep')):
+            labels={'floors':'number of floors','frontage':'frontage width','road':'road width','bedrooms':'bedrooms','bathrooms':'bathrooms'}
+            detail=r.get('detail_interval')
+            if detail and detail.get('applied'):
+                missing=[labels[k] for k in detail.get('fields_missing',[]) if k in labels]
+                message+=('Details still missing: '+', '.join(missing)+'. ' if missing else 'All five structural details are present. ')
+                message+='The research interval uses measured errors for this pattern of missing information. '
+            elif detail:
+                message+='This input uses a conservative fallback: '+detail.get('reason','The research policy does not apply.')+' '
+            else:
+                message+='This saved result uses the original interval method. Select Detail-aware ranges (research) under Add optional details to try structural-detail calibration. '
+            message+='Adding valid details can reduce relative uncertainty; the range may stay equal or widen, and a narrower range does not prove a more accurate price for this home.'
+        else:
+            message+='This reflects historical asking-price model uncertainty, not a verified sale price or a live market feed.'
+        return message
     if topic=='documents':
         if e['income_disagreement']:
             return 'The pending payslip differs from the verified income. A verifier needs to review the difference.'
@@ -192,7 +210,8 @@ def render(topic, plan, snapshot, glossary=None):
     return message
 
 
-def answer(message, snapshot, role, context):
+def answer(message, snapshot, role, context, use_qwen=True):
+    started=time.monotonic()
     topic,cues,screen,goal,step,phrase=classify(message,context,role)
     safe=plan_for(topic,phrase,role,snapshot)
     # Explicitly list the only metadata permitted over the private tunnel.
@@ -208,7 +227,7 @@ def answer(message, snapshot, role, context):
         metadata['glossary_topic']=glossary
     candidate=None
     try:
-        if safe['status'] in ('READY','HANDOFF'):
+        if use_qwen and safe['status'] in ('READY','HANDOFF'):
             candidate=propose(safe,metadata)
     except (ValueError,TypeError,KeyError,IndexError,OSError):
         pass
@@ -216,8 +235,16 @@ def answer(message, snapshot, role, context):
     plan=dict(candidate if live else safe)
     # Required facts always accompany the deterministic text, even if Qwen omits them.
     required={'health':['health.score','health.surplus','profile.income'],
-              'property':['property.range','property.estimate'],
+              'property':['property.range','property.estimate','property.detail_interval'],
               'documents':['profile.income_status'],'loan':['loan.capacity','loan.assumptions']}
     if safe['status']=='READY':
         plan['evidence_ids']=list(dict.fromkeys([*(key for key in required.get(topic,[]) if key in safe['evidence_ids']),*plan['evidence_ids']]))
-    return {**plan,'message':render(topic,plan,snapshot,glossary),'mode':'Qwen evidence selection' if live else 'Rule-based explanation'}
+    result=(snapshot.get('property') or {}).get('result',{})
+    return {**plan,'message':render(topic,plan,snapshot,glossary,phrase),
+            'mode':'Qwen evidence selection' if live else 'Rule-based explanation',
+            'seconds':round(time.monotonic()-started,3),'assistant_version':'finx-evidence/1.1',
+            'evidence_snapshot':{'read_at':time.time(),'scoring_version':snapshot['health']['rules_version'],
+                'income_status':snapshot['evidence']['profile']['income'],
+                'valuation_status':snapshot['evidence']['valuation']['status'],
+                'valuation_inference_id':result.get('inference',{}).get('id'),
+                'detail_policy_sha256':(result.get('detail_interval') or {}).get('policy_sha256')}}

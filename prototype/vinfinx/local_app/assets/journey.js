@@ -19,7 +19,7 @@ const journey = (() => {
   };
   const suggestions = {
     overview:['Explain my financial health score','How do I get a property price range?','Where can I find my report?'],
-    property:['What is my saved property price range?','What details do I need for a property valuation?','Can market rumors change my property estimate?'],
+    property:['What is my saved property price range?','What details could narrow my property price range?','Can market rumors change my property estimate?'],
     health:['Why did I get this financial health score?','What is an emergency fund?','Has my income been verified?'],
     documents:['Has my payslip been verified?','What income evidence am I missing?'],
     loan:['Explain this loan scenario','Where can I estimate monthly repayments?'],
@@ -231,6 +231,8 @@ const journey = (() => {
   function renderSuggestions() {
     const list=document.querySelector('#finxSuggestions');
     if(!list)return;
+    list.hidden=workspace.suggestionsDismissed();
+    if(list.hidden){list.replaceChildren();return;}
     const questions=questionsFor(effectiveScreen());
     list.innerHTML=questions.map((q,i)=>`<button type="button" class="text-button" data-finx-question="${i}">${q}</button>`).join('');
   }
@@ -278,7 +280,15 @@ const journey = (() => {
         }
         if(el.dataset.finxQuestion!==undefined){
           const question=questionsFor(effectiveScreen())[Number(el.dataset.finxQuestion)];
-          if(question){openChat(effectiveScreen());document.querySelector('#chatInput').value=question;document.querySelector('#chatInput').focus();}
+          if(question){
+            openChat(effectiveScreen());
+            const form=document.querySelector('#chatForm');
+            if(form.querySelector('[type=submit]').disabled)return;
+            document.querySelector('#chatInput').value=question;
+            workspace.dismissSuggestions();renderSuggestions();
+            document.querySelector('#chatInput').focus({preventScroll:true});
+            form.requestSubmit();
+          }
         }
       }catch(error){toast(error.message);}
     });

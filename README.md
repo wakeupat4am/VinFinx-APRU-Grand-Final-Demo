@@ -1,5 +1,10 @@
 # VinFinx × Vietcombank — APRU Grand Final Demo
 
+> [Submission status and 2-minute recording guide](docs/SUBMISSION.md).
+>
+> **Submission build: `demo-v1.2.1`.** Real CPU valuation and the detail-aware interval demonstration work locally. Tap a suggested Ask Finx question once to send it and hide the suggestions. Replies use the latest saved profile; if it changes during generation, the app refreshes the answer deterministically. **Live server Qwen is currently unverified because SSH access is failing.** Rule-based assistance is working and explicitly labelled; this is not live-market data or bank integration.
+
+
 **An English, three-role demo you can clone, rehearse and record on your own computer.**
 
 MyWealth helps a customer explore an indicative property value, understand their financial health and prepare for a conversation with an advisor. Finx guides the customer through eight small steps. The same application supports a normal web layout and an interactive iPhone-style preview.
@@ -59,7 +64,7 @@ The installer:
 
 No developer database, old passwords, raw property datasets or private server credentials are needed. Internet is needed for installation. Once installed, the core experience runs locally; map tiles and optional Qwen have separate dependencies.
 
-**Repeatable release:** use the `demo-v1.2.0` tag to reproduce this source version. The base model lock still references `demo-v1`: its artifacts have not changed. The separate interval-policy lock references `demo-v1.2.0`. Use `main` for subsequent updates.
+**Repeatable release:** use the `demo-v1.2.1` tag to reproduce this source version. The base model lock still references `demo-v1`: its artifacts have not changed. The separate interval-policy lock references `demo-v1.2.0`. Use `main` for subsequent updates.
 
 If you received the exact asset ZIP separately:
 

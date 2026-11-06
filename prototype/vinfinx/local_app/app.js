@@ -456,6 +456,7 @@ document.addEventListener('submit',async e=>{
   if(form.id==='chatForm'){
    const text=$('#chatInput').value.trim();if(!text)throw Error('Enter a question before sending.');
    const input=$('#chatInput'), status=$('#finxRequestStatus');
+   workspace.dismissSuggestions();journey.renderSuggestions();
    input.value='';workspace.clearDraft('chat',cid);workspace.message(cid,text,true);
    const request=new AbortController();chatRequest=request;
    status.hidden=false;status.textContent='Finx is checking the information available to this profile. ';
